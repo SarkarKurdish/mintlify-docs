@@ -2,24 +2,93 @@
   "openapi": "3.1.1",
   "info": {
     "title": "OTPIQ SMS API",
-    "description": ""
+    "description": "Enterprise-grade SMS and messaging API for sending verification codes, custom messages, and managing sender IDs. Supports multiple providers including SMS, WhatsApp, and Telegram with intelligent fallback routing.\n\n## Features\n\n* **Multi-Provider Support**: Send messages via SMS, WhatsApp, or Telegram\n* **Smart Fallback Routes**: Automatic provider switching for maximum delivery success\n* **Verification Codes**: Automated OTP delivery with customizable codes\n* **Custom Messages**: Send personalized messages with custom sender IDs\n* **Rate Limiting**: Built-in protection against abuse\n* **Spending Controls**: Configurable spending thresholds and credit management\n* **Real-time Tracking**: Monitor message delivery status\n* **Sender ID Management**: Register and manage custom sender IDs\n* **Webhook Notifications**: Real-time delivery status updates via webhooks\n\n## Provider Options\n\nOTPIQ now offers 6 provider options including smart fallback routes:\n\n- **`whatsapp-sms`**: Try WhatsApp first, fallback to SMS\n- **`telegram-sms`**: Try Telegram first, fallback to SMS\n- **`whatsapp-telegram-sms`**: Try WhatsApp → Telegram → SMS (maximum delivery success)\n- **`sms`**: SMS only\n- **`whatsapp`**: WhatsApp only\n- **`telegram`**: Telegram only\n\n## Authentication\n\nAll API requests require authentication using your project API key. Include it in the Authorization header:\n\n```\nAuthorization: Bearer sk_live_your_api_key_here\n```\n\n## Webhooks\n\nOTPIQ provides real-time delivery status notifications via webhooks. See the Webhooks section for detailed documentation and examples.\n\n## Support\n\n* **Documentation**: [https://docs.otpiq.com](https://docs.otpiq.com)\n* **Support Email**: info@otpiq.com",
+    "version": "1.0.0",
+    "contact": {
+      "name": "OTPIQ Support",
+      "url": "https://otpiq.com",
+      "email": "info@otpiq.com"
+    },
+    "license": {
+      "name": "Commercial",
+      "url": "https://otpiq.com/terms"
+    }
   },
+  "externalDocs": {
+    "description": "OTPIQ Documentation",
+    "url": "https://docs.otpiq.com"
+  },
+  "servers": [
+    {
+      "url": "https://api.otpiq.com/api",
+      "description": "Production API"
+    }
+  ],
   "security": [
     {
       "bearerAuth": []
     }
   ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "API key authentication and project information"
+    },
+    {
+      "name": "SMS",
+      "description": "Send SMS messages, verification codes, and track delivery with multiple provider options and fallback routing"
+    },
+    {
+      "name": "Sender IDs",
+      "description": "Manage custom sender IDs for your messages"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Real-time delivery status notifications via webhooks"
+    }
+  ],
   "paths": {
     "/info": {
       "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get project information",
         "description": "Retrieve information about the authenticated project including remaining credits and project details.",
+        "operationId": "getProjectInfo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Project information retrieved successfully. Response body includes: projectName (string), credit (number).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectInfo"
+                  "type": "object",
+                  "required": [
+                    "projectName",
+                    "credit"
+                  ],
+                  "properties": {
+                    "projectName": {
+                      "type": "string",
+                      "description": "Name of the project",
+                      "examples": [
+                        "My SMS Project"
+                      ]
+                    },
+                    "credit": {
+                      "type": "number",
+                      "description": "Remaining credit balance in IQD",
+                      "minimum": 0,
+                      "examples": [
+                        15000
+                      ]
+                    }
+                  }
                 },
                 "examples": {
                   "success": {
@@ -34,10 +103,48 @@
             }
           },
           "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Unauthorized error message",
+                      "examples": [
+                        "Unauthorized, please use your project api key"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
           },
           "500": {
-            "$ref": "#/components/responses/InternalServerError"
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Internal server error message",
+                      "examples": [
+                        "Internal server error"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -61,7 +168,100 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SenderIdsResponse"
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "Whether the request was successful",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "Array of sender IDs",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "_id",
+                          "senderId",
+                          "status",
+                          "pricePerSms"
+                        ],
+                        "properties": {
+                          "_id": {
+                            "type": "string",
+                            "description": "Unique identifier for the sender ID",
+                            "examples": [
+                              "507f1f77bcf86cd799439011"
+                            ]
+                          },
+                          "senderId": {
+                            "type": "string",
+                            "description": "The sender ID name",
+                            "maxLength": 11,
+                            "examples": [
+                              "OTPIQ"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "accepted",
+                              "rejected"
+                            ],
+                            "description": "Status of the sender ID approval",
+                            "examples": [
+                              "accepted"
+                            ]
+                          },
+                          "pricePerSms": {
+                            "type": "object",
+                            "description": "Pricing per SMS for different carriers",
+                            "properties": {
+                              "korekTelecom": {
+                                "type": "number",
+                                "description": "Price for Korek Telecom",
+                                "minimum": 0,
+                                "examples": [
+                                  80
+                                ]
+                              },
+                              "asiaCell": {
+                                "type": "number",
+                                "description": "Price for AsiaCell",
+                                "minimum": 0,
+                                "examples": [
+                                  80
+                                ]
+                              },
+                              "zainIraq": {
+                                "type": "number",
+                                "description": "Price for Zain Iraq",
+                                "minimum": 0,
+                                "examples": [
+                                  80
+                                ]
+                              },
+                              "others": {
+                                "type": "number",
+                                "description": "Price for other carriers",
+                                "minimum": 0,
+                                "examples": [
+                                  100
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 },
                 "examples": {
                   "success": {
@@ -110,65 +310,33 @@
           }
         ],
         "requestBody": {
-          "description": "SMS request parameters.\n\nRequired:\n- phoneNumber: International format without + (e.g., 964750123456)\n- smsType: 'verification' or 'custom'\n\nConditional requirements:\n- When smsType = 'verification': verificationCode is required\n- When smsType = 'custom': customMessage and senderId are required\n\nOptional:\n- provider: Choose from multiple options including fallback routes (default: 'auto')\n  - `whatsapp-sms`: Try WhatsApp first, fallback to SMS (recommended)\n  - `telegram-sms`: Try Telegram first, fallback to SMS\n  - `whatsapp-telegram-sms`: Try WhatsApp → Telegram → SMS (maximum delivery success)\n  - `sms`: SMS only\n  - `whatsapp`: WhatsApp only\n  - `telegram`: Telegram only\n- deliveryReport: WebhookConfig for delivery status webhooks",
+          "description": "SMS request parameters. First select smsType; inputs show/hide accordingly.",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendSMSRequest"
-              },
-              "examples": {
-                "verification": {
-                  "summary": "Send verification code",
-                  "value": {
-                    "phoneNumber": "964750123456",
-                    "smsType": "verification",
-                    "verificationCode": "123456",
-                    "provider": "whatsapp-sms"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SmsVerificationRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SmsCustomMessageRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SmsWhatsAppTemplateRequest"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "smsType",
+                  "mapping": {
+                    "verification": "#/components/schemas/SmsVerificationRequest",
+                    "custom": "#/components/schemas/SmsCustomMessageRequest",
+                    "whatsapp-template": "#/components/schemas/SmsWhatsAppTemplateRequest"
                   }
                 },
-                "custom": {
-                  "summary": "Send custom message",
-                  "value": {
-                    "phoneNumber": "964750123456",
-                    "smsType": "custom",
-                    "customMessage": "Your order #12345 has been confirmed. Thank you for your purchase!",
-                    "senderId": "OTPIQ",
-                    "provider": "sms"
-                  }
-                },
-                "with_webhook": {
-                  "summary": "Send SMS with webhook notifications",
-                  "value": {
-                    "phoneNumber": "964750123456",
-                    "smsType": "verification",
-                    "verificationCode": "123456",
-                    "provider": "whatsapp-sms",
-                    "deliveryReport": {
-                      "webhookUrl": "https://your-app.com/webhooks/sms-status",
-                      "deliveryReportType": "all",
-                      "webhookSecret": "your_webhook_secret_123"
-                    }
-                  }
-                },
-                "telegram_fallback": {
-                  "summary": "Send with Telegram fallback to SMS",
-                  "value": {
-                    "phoneNumber": "964750123456",
-                    "smsType": "verification",
-                    "verificationCode": "123456",
-                    "provider": "telegram-sms"
-                  }
-                },
-                "maximum_fallback": {
-                  "summary": "Send with maximum fallback options",
-                  "value": {
-                    "phoneNumber": "964750123456",
-                    "smsType": "verification",
-                    "verificationCode": "123456",
-                    "provider": "whatsapp-telegram-sms"
-                  }
-                }
+                "required": [
+                  "smsType"
+                ]
               }
             }
           }
@@ -179,7 +347,66 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SendSMSResponse"
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "smsId",
+                    "remainingCredit",
+                    "cost",
+                    "canCover",
+                    "paymentType"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Success message",
+                      "examples": [
+                        "SMS task created successfully"
+                      ]
+                    },
+                    "smsId": {
+                      "type": "string",
+                      "description": "Unique identifier for the SMS message",
+                      "pattern": "^sms-[a-f0-9]{24}$",
+                      "examples": [
+                        "sms-1234567890abcdef123456"
+                      ]
+                    },
+                    "remainingCredit": {
+                      "type": "number",
+                      "description": "Remaining credit balance after the transaction",
+                      "minimum": 0,
+                      "examples": [
+                        14800
+                      ]
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "Cost of the SMS in IQD",
+                      "minimum": 0,
+                      "examples": [
+                        200
+                      ]
+                    },
+                    "canCover": {
+                      "type": "boolean",
+                      "description": "Whether the user has sufficient credit to cover the cost",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "paymentType": {
+                      "type": "string",
+                      "enum": [
+                        "prepaid",
+                        "postpaid"
+                      ],
+                      "description": "Payment type of the user account",
+                      "examples": [
+                        "prepaid"
+                      ]
+                    }
+                  }
                 },
                 "examples": {
                   "success": {
@@ -204,19 +431,140 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ValidationError"
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Validation error message",
+                          "examples": [
+                            "Phone must be a valid number without any spaces or special characters.",
+                            "Invalid sms type.",
+                            "When smsType is custom, you must provide (customMessage)",
+                            "Verification code must be between 1 and 20 characters long.",
+                            "When smsType is whatsapp-template, you must provide (templateName)",
+                            "When smsType is whatsapp-template, you must provide (whatsappAccountId)",
+                            "When smsType is whatsapp-template, you must provide (whatsappPhoneId)",
+                            "Invalid provider."
+                          ]
+                        }
+                      }
                     },
                     {
-                      "$ref": "#/components/schemas/InsufficientCreditError"
+                      "type": "object",
+                      "required": [
+                        "error",
+                        "yourCredit",
+                        "requiredCredit",
+                        "canCover"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Error message",
+                          "examples": [
+                            "Insufficient credit, please add more credit"
+                          ]
+                        },
+                        "yourCredit": {
+                          "type": "number",
+                          "description": "Current credit balance",
+                          "minimum": 0,
+                          "examples": [
+                            100
+                          ]
+                        },
+                        "requiredCredit": {
+                          "type": "number",
+                          "description": "Credit required for the transaction",
+                          "minimum": 0,
+                          "examples": [
+                            200
+                          ]
+                        },
+                        "canCover": {
+                          "type": "boolean",
+                          "description": "Whether the user can cover the cost",
+                          "examples": [
+                            false
+                          ]
+                        }
+                      }
                     },
                     {
-                      "$ref": "#/components/schemas/SpendingThresholdError"
+                      "type": "object",
+                      "required": [
+                        "error",
+                        "currentSpending",
+                        "spendingThreshold",
+                        "cost"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Error message",
+                          "examples": [
+                            "Project spending threshold of 10,000 IQD would be exceeded. Current spending: 9,500 IQD"
+                          ]
+                        },
+                        "currentSpending": {
+                          "type": "number",
+                          "description": "Current spending for the project",
+                          "minimum": 0,
+                          "examples": [
+                            9500
+                          ]
+                        },
+                        "spendingThreshold": {
+                          "type": "number",
+                          "description": "Spending threshold for the project",
+                          "minimum": 0,
+                          "examples": [
+                            10000
+                          ]
+                        },
+                        "cost": {
+                          "type": "number",
+                          "description": "Cost of the transaction",
+                          "minimum": 0,
+                          "examples": [
+                            200
+                          ]
+                        }
+                      }
                     },
                     {
-                      "$ref": "#/components/schemas/SenderIdError"
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Error message",
+                          "examples": [
+                            "SenderID not found",
+                            "SenderID is not accepted, please wait for it to be accepted"
+                          ]
+                        }
+                      }
                     },
                     {
-                      "$ref": "#/components/schemas/TrialModeError"
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "description": "Error message",
+                          "examples": [
+                            "Account is in trial mode, you can only send sms to your own phone number for verification, add credit to send to other numbers"
+                          ]
+                        }
+                      }
                     }
                   ]
                 },
@@ -257,7 +605,46 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RateLimitError"
+                  "type": "object",
+                  "required": [
+                    "message",
+                    "waitMinutes",
+                    "maxRequests",
+                    "timeWindowMinutes"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Rate limit error message",
+                      "examples": [
+                        "Rate limit exceeded. Please try again in 8 minutes. Maximum 10 requests allowed per phone number in 10 minutes."
+                      ]
+                    },
+                    "waitMinutes": {
+                      "type": "number",
+                      "description": "Minutes to wait before retrying",
+                      "minimum": 0,
+                      "examples": [
+                        8
+                      ]
+                    },
+                    "maxRequests": {
+                      "type": "number",
+                      "description": "Maximum requests allowed",
+                      "minimum": 1,
+                      "examples": [
+                        10
+                      ]
+                    },
+                    "timeWindowMinutes": {
+                      "type": "number",
+                      "description": "Time window in minutes",
+                      "minimum": 1,
+                      "examples": [
+                        10
+                      ]
+                    }
+                  }
                 },
                 "examples": {
                   "rate_limit": {
@@ -313,7 +700,113 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SMSTrackingResponse"
+                  "type": "object",
+                  "required": [
+                    "smsId",
+                    "phoneNumber",
+                    "status",
+                    "cost",
+                    "isFinalStatus",
+                    "lastChannel",
+                    "channelFlow"
+                  ],
+                  "properties": {
+                    "smsId": {
+                      "type": "string",
+                      "description": "Unique identifier for the SMS message",
+                      "pattern": "^sms-[a-f0-9]{24}$",
+                      "examples": [
+                        "sms-1234567890abcdef123456"
+                      ]
+                    },
+                    "phoneNumber": {
+                      "type": "string",
+                      "description": "Phone number the SMS was sent to",
+                      "examples": [
+                        "964750123456"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "sent",
+                        "delivered",
+                        "read",
+                        "failed"
+                      ],
+                      "description": "Current status of the SMS message",
+                      "examples": [
+                        "sent"
+                      ]
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "Cost of the SMS in IQD",
+                      "minimum": 0,
+                      "examples": [
+                        200
+                      ]
+                    },
+                    "isFinalStatus": {
+                      "type": "boolean",
+                      "description": "Whether the SMS has reached a final state (no further attempts will be made)",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "lastChannel": {
+                      "type": "string",
+                      "description": "The last channel attempted or used for sending. One of 'sms', 'whatsapp', 'telegram'."
+                    },
+                    "channelFlow": {
+                      "type": "array",
+                      "description": "Sequence of channels and their attempt statuses",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "channel",
+                          "tried"
+                        ],
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "description": "Messaging channel",
+                            "enum": [
+                              "sms",
+                              "whatsapp",
+                              "telegram"
+                            ]
+                          },
+                          "tried": {
+                            "type": "boolean",
+                            "description": "Whether this channel was attempted"
+                          },
+                          "success": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ],
+                            "description": "Whether this channel succeeded (null if not tried yet)"
+                          },
+                          "error": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Error message if the attempt failed"
+                          },
+                          "refunded": {
+                            "type": [
+                              "boolean",
+                              "null"
+                            ],
+                            "description": "Whether the cost for this channel was refunded (when applicable)"
+                          }
+                        }
+                      }
+                    }
+                  }
                 },
                 "examples": {
                   "success": {
@@ -350,7 +843,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/NotFoundError"
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Not found error message",
+                      "examples": [
+                        "SMS not found"
+                      ]
+                    }
+                  }
                 },
                 "examples": {
                   "not_found": {
@@ -365,6 +870,609 @@
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/webhook-examples": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Webhook Examples & Documentation",
+        "description": "This endpoint provides comprehensive documentation and examples for implementing webhooks with OTPIQ. Use this as a reference for understanding webhook payloads and configuration.\n\n## Webhook Overview\n\nOTPIQ webhooks provide real-time delivery status notifications for your SMS messages. When you configure webhooks, you'll receive instant updates about message delivery status directly to your server.\n\n## How to Configure Webhooks\n\nInclude a `deliveryReport` object in your SMS request:\n\n```json\n{\n  \"phoneNumber\": \"964750123456\",\n  \"smsType\": \"verification\",\n  \"verificationCode\": \"123456\",\n  \"senderId\": \"OTPIQ\",\n  \"deliveryReport\": {\n    \"webhookUrl\": \"https://your-app.com/webhooks/sms-status\",\n    \"deliveryReportType\": \"all\",\n    \"webhookSecret\": \"your_secret_123\"\n  }\n}\n```\n\n## Webhook Configuration Fields\n\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `webhookUrl` | string | Yes | HTTPS URL where status updates are sent |\n| `deliveryReportType` | string | No | `\"all\"` for all updates, `\"final\"` for final status only |\n| `webhookSecret` | string | No | Secret key for webhook authentication |\n\n## Webhook Payload Structure\n\nEach webhook request contains a JSON payload with these fields:\n\n### Required Fields\n- `smsId`: Unique message identifier\n- `deliveryReportType`: Your configured report type\n- `isFinal`: Whether this is the final status\n- `channel`: Messaging channel (sms, whatsapp, telegram)\n- `status`: Delivery status (sent, delivered, failed)\n\n### Optional Fields\n- `reason`: Failure reason (only when status is 'failed')\n- `senderId`: Sender ID used (when a custom sender ID is provided for any message type)\n\n## Delivery Status Flow\n\n### SMS Messages\n1. **sent** → Message accepted by carrier\n2. **delivered** → Message confirmed delivered to recipient\n3. **failed** → Message could not be delivered\n\n### WhatsApp Messages\n1. **sent** → Message sent to WhatsApp servers\n2. **delivered** → Message delivered to recipient's device\n3. **failed** → Message could not be sent or delivered\n\n### Telegram Messages\n1. **sent** → Message sent to Telegram servers\n2. **delivered** → Message delivered to recipient\n3. **failed** → Message could not be sent\n\n## Webhook Examples\n\n### Example 1: SMS with Custom Sender ID\n\n**Request:**\n```json\n{\n  \"phoneNumber\": \"964750123456\",\n  \"smsType\": \"custom\",\n  \"customMessage\": \"Your order has been confirmed!\",\n  \"senderId\": \"OTPIQ\",\n  \"deliveryReport\": {\n    \"webhookUrl\": \"https://your-app.com/webhooks/sms-status\",\n    \"deliveryReportType\": \"all\",\n    \"webhookSecret\": \"your_secret_123\"\n  }\n}\n```\n\n**Webhook Payloads Received:**\n\n1. **Sent Status:**\n```json\n{\n  \"smsId\": \"sms_1234567890abcdef\",\n  \"deliveryReportType\": \"all\",\n  \"isFinal\": false,\n  \"channel\": \"sms\",\n  \"status\": \"sent\",\n  \"senderId\": \"OTPIQ\"\n}\n```\n\n2. **Delivered Status:**\n```json\n{\n  \"smsId\": \"sms_1234567890abcdef\",\n  \"deliveryReportType\": \"all\",\n  \"isFinal\": true,\n  \"channel\": \"sms\",\n  \"status\": \"delivered\",\n  \"senderId\": \"OTPIQ\"\n}\n```\n\n### Example 2: WhatsApp with Final-Only Reports\n\n**Request:**\n```json\n{\n  \"phoneNumber\": \"964750123456\",\n  \"smsType\": \"verification\",\n  \"verificationCode\": \"123456\",\n  \"provider\": \"whatsapp\",\n  \"deliveryReport\": {\n    \"webhookUrl\": \"https://your-app.com/webhooks/whatsapp-status\",\n    \"deliveryReportType\": \"final\"\n  }\n}\n```\n\n**Webhook Payload (Final Status Only):**\n```json\n{\n  \"smsId\": \"sms_1234567890abcdef\",\n  \"deliveryReportType\": \"final\",\n  \"isFinal\": true,\n  \"channel\": \"whatsapp\",\n  \"status\": \"delivered\"\n}\n```\n\n### Example 3: Verification with WhatsApp Custom Sender\n\n**Request:**\n```json\n{\n  \"phoneNumber\": \"964750123456\",\n  \"smsType\": \"verification\",\n  \"verificationCode\": \"123456\",\n  \"whatsappAccountId\": \"68c46fecc509cdcec8fb3ef2\",\n  \"whatsappPhoneId\": \"68da31fb518ac3db3eb0a0f4\",\n  \"templateName\": \"verification_template\",\n  \"provider\": \"whatsapp\",\n  \"deliveryReport\": {\n    \"webhookUrl\": \"https://your-app.com/webhooks/whatsapp-status\",\n    \"deliveryReportType\": \"all\"\n  }\n}\n```\n\n**Webhook Payloads Received:**\n\n1. **Sent Status:**\n```json\n{\n  \"smsId\": \"sms_1234567890abcdef\",\n  \"deliveryReportType\": \"all\",\n  \"isFinal\": false,\n  \"channel\": \"whatsapp\",\n  \"status\": \"sent\"\n}\n```\n\n2. **Delivered Status:**\n```json\n{\n  \"smsId\": \"sms_1234567890abcdef\",\n  \"deliveryReportType\": \"all\",\n  \"isFinal\": true,\n  \"channel\": \"whatsapp\",\n  \"status\": \"delivered\"\n}\n```\n\n### Example 4: Failing webhook\n\n**Request:**\n```json\n{\n  \"phoneNumber\": \"964750123456\",\n  \"smsType\": \"custom\",\n  \"customMessage\": \"Your order has been confirmed!\",\n  \"senderId\": \"OTPIQ\",\n  \"deliveryReport\": {\n    \"webhookUrl\": \"https://your-app.com/webhooks/sms-status\",\n    \"deliveryReportType\": \"final\"\n  }\n}\n```\n\n**Webhook Payload (Failure):**\n```json\n{\n  \"smsId\": \"sms_abcdef1234567890\",\n  \"deliveryReportType\": \"final\",\n  \"isFinal\": true,\n  \"channel\": \"sms\",\n  \"status\": \"failed\",\n  \"reason\": \"Carrier rejected the message\",\n  \"senderId\": \"OTPIQ\"\n}\n```\n\n## Security Best Practices\n\n1. **Use HTTPS**: Webhook URLs must use HTTPS\n2. **Verify Secret**: Check the `X-OTPIQ-Webhook-Secret` header\n3. **Respond Quickly**: Return 2xx status within 10 seconds\n4. **Handle Duplicates**: Implement idempotency for duplicate webhooks\n5. **Log Everything**: Log all webhook requests for debugging\n\n## Common Issues & Solutions\n\n### Webhook Not Received\n- Check webhook URL accessibility\n- Verify HTTPS is used\n- Check server logs for errors\n\n### Authentication Failures\n- Verify webhook secret matches\n- Check header name and value\n\n### Timeout Errors\n- Ensure webhook endpoint responds quickly\n- Implement async processing if needed\n\n## Testing Webhooks\n\nUse [webhook.site](https://webhook.site) to test webhook delivery:\n\n1. Generate a test URL\n2. Use it as your webhook URL\n3. Send a test SMS\n4. Monitor the webhook payloads\n\n## Rate Limits\n\n- **Webhook Delivery**: Up to 10 retries with exponential backoff\n- **Timeout**: 10 seconds per webhook request\n- **Queue Size**: Unlimited webhook queue",
+        "operationId": "getWebhookExamples",
+        "responses": {
+          "200": {
+            "description": "Webhook documentation and examples",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Documentation message",
+                      "examples": [
+                        "Webhook documentation and examples"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key authentication. Format: `Bearer sk_live_your_api_key_here`"
+      }
+    },
+    "schemas": {
+      "SmsUnifiedRequest_REMOVED": {
+        "type": "object",
+        "required": [
+          "phoneNumber",
+          "smsType"
+        ],
+        "properties": {
+          "smsType": {
+            "type": "string",
+            "enum": [
+              "verification",
+              "custom",
+              "whatsapp-template"
+            ],
+            "description": "Select the message type. Must be \"verification\", \"custom\", or \"whatsapp-template\". This determines which inputs are required."
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number in international format without + (e.g., 964750123456)",
+            "pattern": "^[0-9]{10,15}$",
+            "examples": [
+              "964750123456"
+            ]
+          },
+          "verificationCode": {
+            "type": "string",
+            "description": "Verification code to send (required when smsType=verification)",
+            "minLength": 1,
+            "maxLength": 20,
+            "examples": [
+              "123456"
+            ]
+          },
+          "customMessage": {
+            "type": "string",
+            "description": "Custom message to send (required when smsType=custom)",
+            "maxLength": 1000,
+            "examples": [
+              "Your order #12345 has been confirmed. Thank you for your purchase!"
+            ]
+          },
+          "senderId": {
+            "type": "string",
+            "description": "Optional sender ID to use for the message",
+            "maxLength": 11,
+            "examples": [
+              "OTPIQ"
+            ]
+          },
+          "templateName": {
+            "type": "string",
+            "description": "Optional WhatsApp template name for using custom WhatsApp sender",
+            "examples": [
+              "template_name"
+            ]
+          },
+          "whatsappAccountId": {
+            "type": "string",
+            "description": "Optional WhatsApp Business Account ID for using custom WhatsApp sender",
+            "examples": [
+              "68c46fecc509cdcec8fb3ef2"
+            ]
+          },
+          "whatsappPhoneId": {
+            "type": "string",
+            "description": "Optional WhatsApp Phone Number ID for using custom WhatsApp sender",
+            "examples": [
+              "68da31fb518ac3db3eb0a0f4"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "whatsapp-sms",
+              "telegram-sms",
+              "whatsapp-telegram-sms",
+              "sms",
+              "whatsapp",
+              "telegram"
+            ],
+            "description": "Provider/channel to use",
+            "default": "auto",
+            "examples": [
+              "whatsapp-sms"
+            ]
+          },
+          "deliveryReport": {
+            "description": "Optional webhook delivery report configuration",
+            "type": "object",
+            "properties": {
+              "webhookUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "The HTTPS URL where delivery status updates will be sent",
+                "examples": [
+                  "https://your-app.com/webhooks/sms-status"
+                ]
+              },
+              "deliveryReportType": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "final"
+                ],
+                "description": "Controls when webhooks are triggered",
+                "default": "all"
+              },
+              "webhookSecret": {
+                "type": "string",
+                "description": "Optional secret key for webhook authentication",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[\\w!#$%&'*+\\-.^_`|~]+$",
+                "examples": [
+                  "your_webhook_secret_123"
+                ]
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "smsType": {
+                  "const": "verification"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "verificationCode"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "smsType": {
+                  "const": "custom"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "customMessage"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "smsType": {
+                  "const": "whatsapp-template"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "templateName",
+                "whatsappAccountId",
+                "whatsappPhoneId"
+              ]
+            }
+          }
+        ]
+      },
+      "SmsVerificationRequest": {
+        "title": "Verification Message",
+        "type": "object",
+        "required": [
+          "phoneNumber",
+          "smsType",
+          "verificationCode"
+        ],
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number in international format without + (e.g., 964750123456)",
+            "pattern": "^[0-9]{10,15}$",
+            "examples": [
+              "964750123456"
+            ]
+          },
+          "smsType": {
+            "type": "string",
+            "description": "Must be set to \"verification\" for sending verification codes. This value determines the message type and required fields."
+          },
+          "verificationCode": {
+            "type": "string",
+            "description": "Verification code to send",
+            "minLength": 1,
+            "maxLength": 20,
+            "examples": [
+              "123456"
+            ]
+          },
+          "senderId": {
+            "type": "string",
+            "description": "Optional sender ID to use for the message",
+            "maxLength": 11,
+            "examples": [
+              "OTPIQ"
+            ]
+          },
+          "whatsappAccountId": {
+            "type": "string",
+            "description": "Optional WhatsApp Business Account ID for using custom WhatsApp sender",
+            "examples": [
+              "68c46fecc509cdcec8fb3ef2"
+            ]
+          },
+          "whatsappPhoneId": {
+            "type": "string",
+            "description": "Optional WhatsApp Phone Number ID for using custom WhatsApp sender",
+            "examples": [
+              "68da31fb518ac3db3eb0a0f4"
+            ]
+          },
+          "templateName": {
+            "type": "string",
+            "description": "Optional WhatsApp template name for using custom WhatsApp sender",
+            "examples": [
+              "verification_template"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "whatsapp-sms",
+              "telegram-sms",
+              "whatsapp-telegram-sms",
+              "sms",
+              "whatsapp",
+              "telegram"
+            ],
+            "description": "Provider/channel to use",
+            "default": "auto",
+            "examples": [
+              "whatsapp-sms"
+            ]
+          },
+          "deliveryReport": {
+            "description": "Optional webhook delivery report configuration",
+            "type": "object",
+            "properties": {
+              "webhookUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "The HTTPS URL where delivery status updates will be sent",
+                "examples": [
+                  "https://your-app.com/webhooks/sms-status"
+                ]
+              },
+              "deliveryReportType": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "final"
+                ],
+                "description": "Controls when webhooks are triggered",
+                "default": "all"
+              },
+              "webhookSecret": {
+                "type": "string",
+                "description": "Optional secret key for webhook authentication",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[\\w!#$%&'*+\\-.^_`|~]+$",
+                "examples": [
+                  "your_webhook_secret_123"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "SmsCustomMessageRequest": {
+        "title": "Custom Message",
+        "type": "object",
+        "required": [
+          "phoneNumber",
+          "smsType",
+          "customMessage"
+        ],
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number in international format without + (e.g., 964750123456)",
+            "pattern": "^[0-9]{10,15}$",
+            "examples": [
+              "964750123456"
+            ]
+          },
+          "smsType": {
+            "type": "string",
+            "description": "Must be set to \"custom\" for sending custom messages with your own content. This value determines the message type and required fields."
+          },
+          "customMessage": {
+            "type": "string",
+            "description": "Custom message to send",
+            "maxLength": 1000,
+            "examples": [
+              "Your order #12345 has been confirmed. Thank you for your purchase!"
+            ]
+          },
+          "senderId": {
+            "type": "string",
+            "description": "Optional sender ID to use for the message",
+            "maxLength": 11,
+            "examples": [
+              "OTPIQ"
+            ]
+          },
+          "whatsappAccountId": {
+            "type": "string",
+            "description": "Optional WhatsApp Business Account ID for using custom WhatsApp sender",
+            "examples": [
+              "68c46fecc509cdcec8fb3ef2"
+            ]
+          },
+          "whatsappPhoneId": {
+            "type": "string",
+            "description": "Optional WhatsApp Phone Number ID for using custom WhatsApp sender",
+            "examples": [
+              "68da31fb518ac3db3eb0a0f4"
+            ]
+          },
+          "templateName": {
+            "type": "string",
+            "description": "Optional WhatsApp template name for using custom WhatsApp sender",
+            "examples": [
+              "custom_template"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "whatsapp-sms",
+              "telegram-sms",
+              "whatsapp-telegram-sms",
+              "sms",
+              "whatsapp",
+              "telegram"
+            ],
+            "description": "Provider/channel to use",
+            "default": "auto",
+            "examples": [
+              "sms"
+            ]
+          },
+          "deliveryReport": {
+            "description": "Optional webhook delivery report configuration",
+            "type": "object",
+            "properties": {
+              "webhookUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "The HTTPS URL where delivery status updates will be sent",
+                "examples": [
+                  "https://your-app.com/webhooks/sms-status"
+                ]
+              },
+              "deliveryReportType": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "final"
+                ],
+                "description": "Controls when webhooks are triggered",
+                "default": "all"
+              },
+              "webhookSecret": {
+                "type": "string",
+                "description": "Optional secret key for webhook authentication",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[\\w!#$%&'*+\\-.^_`|~]+$",
+                "examples": [
+                  "your_webhook_secret_123"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "SmsWhatsAppTemplateRequest": {
+        "title": "WhatsApp Template Message",
+        "type": "object",
+        "required": [
+          "phoneNumber",
+          "smsType",
+          "templateName",
+          "whatsappAccountId",
+          "whatsappPhoneId"
+        ],
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "description": "Phone number in international format without + (e.g., 964750123456)",
+            "pattern": "^[0-9]{10,15}$",
+            "examples": [
+              "964750123456"
+            ]
+          },
+          "smsType": {
+            "type": "string",
+            "description": "Must be set to \"whatsapp-template\" for sending WhatsApp template messages. This value determines the message type and required fields."
+          },
+          "templateName": {
+            "type": "string",
+            "description": "WhatsApp template name",
+            "examples": [
+              "template_name"
+            ]
+          },
+          "whatsappAccountId": {
+            "type": "string",
+            "description": "WhatsApp Business Account ID",
+            "examples": [
+              "68c46fecc509cdcec8fb3ef2"
+            ]
+          },
+          "whatsappPhoneId": {
+            "type": "string",
+            "description": "WhatsApp Phone Number ID",
+            "examples": [
+              "68da31fb518ac3db3eb0a0f4"
+            ]
+          },
+          "senderId": {
+            "type": "string",
+            "description": "Optional sender ID to use for the message",
+            "maxLength": 11,
+            "examples": [
+              "OTPIQ"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "whatsapp-sms",
+              "telegram-sms",
+              "whatsapp-telegram-sms",
+              "sms",
+              "whatsapp",
+              "telegram"
+            ],
+            "description": "Provider/channel to use",
+            "default": "auto",
+            "examples": [
+              "whatsapp"
+            ]
+          },
+          "deliveryReport": {
+            "description": "Optional webhook delivery report configuration",
+            "type": "object",
+            "properties": {
+              "webhookUrl": {
+                "type": "string",
+                "format": "uri",
+                "description": "The HTTPS URL where delivery status updates will be sent",
+                "examples": [
+                  "https://your-app.com/webhooks/sms-status"
+                ]
+              },
+              "deliveryReportType": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "final"
+                ],
+                "description": "Controls when webhooks are triggered",
+                "default": "all"
+              },
+              "webhookSecret": {
+                "type": "string",
+                "description": "Optional secret key for webhook authentication",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[\\w!#$%&'*+\\-.^_`|~]+$",
+                "examples": [
+                  "your_webhook_secret_123"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "message"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Unauthorized error message",
+                  "examples": [
+                    "Unauthorized, please use your project api key"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "message"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Not found error message",
+                  "examples": [
+                    "SMS not found"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "message"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Internal server error message",
+                  "examples": [
+                    "Internal server error"
+                  ]
+                }
+              }
+            }
           }
         }
       }

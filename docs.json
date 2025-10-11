@@ -22,27 +22,9 @@
             ]
           },
           {
-            "group": "Customization",
+            "group": "Essentials",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "essentials/how-webhook-works"
             ]
           }
         ]
@@ -57,12 +39,22 @@
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Project Endpoints",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/endpoint/get"
+            ]
+          },
+          {
+            "group": "Messaging & SMS Endpoints",
+            "pages": [
+              "api-reference/messaging/post",
+              "api-reference/messaging/track"
+            ]
+          },
+          {
+            "group": "Sender ID Endpoints",
+            "pages": [
+              "api-reference/sender-id/get"
             ]
           }
         ]

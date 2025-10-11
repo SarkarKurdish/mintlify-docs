@@ -1,0 +1,423 @@
+---
+title: "How Webhooks Work"
+description: "OTPIQ allows you to configure webhooks for your SMS messages to receive real-time delivery status updates."
+icon: "webhook"
+---
+
+OTPIQ webhooks provide real-time delivery status notifications for your SMS messages. When you configure webhooks, you'll receive instant updates about message delivery status directly to your server, without needing to poll the API.
+
+## Webhook Overview
+
+Webhooks are HTTP POST requests that OTPIQ sends to your specified endpoint whenever there's a status update for your SMS messages. This allows you to:
+
+- Get real-time delivery confirmations
+- Track message failures immediately
+- Update your application's status in real-time
+- Avoid the need for constant API polling
+
+## How to Configure Webhooks
+
+To enable webhooks, include a `deliveryReport` object in your SMS request:
+
+```json
+{
+  "phoneNumber": "964750123456",
+  "smsType": "verification",
+  "verificationCode": "123456",
+  "senderId": "OTPIQ",
+  "deliveryReport": {
+    "webhookUrl": "https://your-app.com/webhooks/sms-status",
+    "deliveryReportType": "all",
+    "webhookSecret": "your_secret_123"
+  }
+}
+```
+
+## Webhook Configuration Fields
+
+<ResponseField name="webhookUrl" type="string" required>
+  The HTTPS URL where delivery status updates will be sent. Must use HTTPS
+  protocol. Example: `https://your-app.com/webhooks/sms-status`
+</ResponseField>
+
+<ResponseField name="deliveryReportType" type="string" default="all">
+  Controls when webhooks are triggered: - `"all"` - Receive webhooks for all
+  status updates (sent, delivered, failed) - `"final"` - Only receive webhooks
+  for final status updates (delivered or failed)
+</ResponseField>
+
+<ResponseField name="webhookSecret" type="string">
+  Optional secret key for webhook authentication. This will be sent in the
+  `X-OTPIQ-Webhook-Secret` header for security verification. Example:
+  `your_webhook_secret_123`
+</ResponseField>
+
+## Webhook Payload Structure
+
+Each webhook request contains a JSON payload with the following structure:
+
+### Required Fields
+
+<ResponseField name="smsId" type="string">
+  Unique message identifier that matches the ID returned when you sent the SMS.
+  Example: `sms_1234567890abcdef`
+</ResponseField>
+
+<ResponseField name="deliveryReportType" type="string">
+  Your configured report type (`"all"` or `"final"`).
+</ResponseField>
+
+<ResponseField name="isFinal" type="boolean">
+  Whether this is the final status update for this message. When `true`, no
+  further webhooks will be sent for this message.
+</ResponseField>
+
+<ResponseField name="channel" type="string">
+  The messaging channel used: `"sms"`, `"whatsapp"`, or `"telegram"`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current delivery status: - `"sent"` - Message has been sent to the provider -
+  `"delivered"` - Message confirmed delivered to recipient - `"failed"` -
+  Message could not be delivered
+</ResponseField>
+
+### Optional Fields
+
+<ResponseField name="reason" type="string">
+  Failure reason (only included when status is `"failed"`). Example: `"Carrier
+  rejected the message"`
+</ResponseField>
+
+<ResponseField name="senderId" type="string">
+  Sender ID used (included when a custom sender ID was provided for any message
+  type). Example: `"OTPIQ"`
+</ResponseField>
+
+## Delivery Status Flow
+
+### SMS Messages
+
+1. **sent** → Message accepted by carrier
+2. **delivered** → Message confirmed delivered to recipient
+3. **failed** → Message could not be delivered
+
+### WhatsApp Messages
+
+1. **sent** → Message sent to WhatsApp servers
+2. **delivered** → Message delivered to recipient's device
+3. **failed** → Message could not be sent or delivered
+
+### Telegram Messages
+
+1. **sent** → Message sent to Telegram servers
+2. **delivered** → Message delivered to recipient
+3. **failed** → Message could not be sent
+
+## Webhook Examples
+
+### Example 1: SMS with Custom Sender ID
+
+**Request:**
+
+```json
+{
+  "phoneNumber": "964750123456",
+  "smsType": "custom",
+  "customMessage": "Your order has been confirmed!",
+  "senderId": "OTPIQ",
+  "deliveryReport": {
+    "webhookUrl": "https://your-app.com/webhooks/sms-status",
+    "deliveryReportType": "all",
+    "webhookSecret": "your_secret_123"
+  }
+}
+```
+
+**Webhook Payloads Received:**
+
+1. **Sent Status:**
+
+```json
+{
+  "smsId": "sms_1234567890abcdef",
+  "deliveryReportType": "all",
+  "isFinal": false,
+  "channel": "sms",
+  "status": "sent",
+  "senderId": "OTPIQ"
+}
+```
+
+2. **Delivered Status:**
+
+```json
+{
+  "smsId": "sms_1234567890abcdef",
+  "deliveryReportType": "all",
+  "isFinal": true,
+  "channel": "sms",
+  "status": "delivered",
+  "senderId": "OTPIQ"
+}
+```
+
+### Example 2: WhatsApp with Final-Only Reports
+
+**Request:**
+
+```json
+{
+  "phoneNumber": "964750123456",
+  "smsType": "verification",
+  "verificationCode": "123456",
+  "provider": "whatsapp",
+  "deliveryReport": {
+    "webhookUrl": "https://your-app.com/webhooks/whatsapp-status",
+    "deliveryReportType": "final"
+  }
+}
+```
+
+**Webhook Payload (Final Status Only):**
+
+```json
+{
+  "smsId": "sms_1234567890abcdef",
+  "deliveryReportType": "final",
+  "isFinal": true,
+  "channel": "whatsapp",
+  "status": "delivered"
+}
+```
+
+### Example 3: Verification with WhatsApp Custom Sender
+
+**Request:**
+
+```json
+{
+  "phoneNumber": "964750123456",
+  "smsType": "verification",
+  "verificationCode": "123456",
+  "whatsappAccountId": "68c46fecc509cdcec8fb3ef2",
+  "whatsappPhoneId": "68da31fb518ac3db3eb0a0f4",
+  "templateName": "verification_template",
+  "provider": "whatsapp",
+  "deliveryReport": {
+    "webhookUrl": "https://your-app.com/webhooks/whatsapp-status",
+    "deliveryReportType": "all"
+  }
+}
+```
+
+**Webhook Payloads Received:**
+
+1. **Sent Status:**
+
+```json
+{
+  "smsId": "sms_1234567890abcdef",
+  "deliveryReportType": "all",
+  "isFinal": false,
+  "channel": "whatsapp",
+  "status": "sent"
+}
+```
+
+2. **Delivered Status:**
+
+```json
+{
+  "smsId": "sms_1234567890abcdef",
+  "deliveryReportType": "all",
+  "isFinal": true,
+  "channel": "whatsapp",
+  "status": "delivered"
+}
+```
+
+### Example 4: Failed Message
+
+**Request:**
+
+```json
+{
+  "phoneNumber": "964750123456",
+  "smsType": "custom",
+  "customMessage": "Your order has been confirmed!",
+  "senderId": "OTPIQ",
+  "deliveryReport": {
+    "webhookUrl": "https://your-app.com/webhooks/sms-status",
+    "deliveryReportType": "final"
+  }
+}
+```
+
+**Webhook Payload (Failure):**
+
+```json
+{
+  "smsId": "sms_abcdef1234567890",
+  "deliveryReportType": "final",
+  "isFinal": true,
+  "channel": "sms",
+  "status": "failed",
+  "reason": "Carrier rejected the message",
+  "senderId": "OTPIQ"
+}
+```
+
+## Security Best Practices
+
+<Tip>
+  Always implement proper security measures when handling webhooks to protect
+  your application.
+</Tip>
+
+### 1. Use HTTPS
+
+Webhook URLs must use HTTPS to ensure secure transmission of delivery status data.
+
+### 2. Verify Webhook Secret
+
+Check the `X-OTPIQ-Webhook-Secret` header to verify the webhook authenticity:
+
+```javascript
+const receivedSecret = req.headers["x-otpiq-webhook-secret"];
+const expectedSecret = "your_webhook_secret_123";
+
+if (receivedSecret !== expectedSecret) {
+  return res.status(401).send("Unauthorized");
+}
+```
+
+### 3. Respond Quickly
+
+Your webhook endpoint should respond with a 2xx status code within 10 seconds to acknowledge receipt.
+
+### 4. Handle Duplicates
+
+Implement idempotency using the `smsId` to handle potential duplicate webhooks:
+
+```javascript
+const processedMessages = new Set();
+
+if (processedMessages.has(payload.smsId)) {
+  return res.status(200).send("Already processed");
+}
+
+processedMessages.add(payload.smsId);
+// Process the webhook...
+```
+
+### 5. Log Everything
+
+Log all webhook requests for debugging and monitoring purposes.
+
+## Common Issues & Solutions
+
+### Webhook Not Received
+
+**Possible Causes:**
+
+- Webhook URL is not accessible from the internet
+- Server is not responding within 10 seconds
+- HTTPS certificate issues
+
+**Solutions:**
+
+- Verify webhook URL accessibility
+- Check server logs for errors
+- Ensure HTTPS is properly configured
+
+### Authentication Failures
+
+**Possible Causes:**
+
+- Webhook secret mismatch
+- Missing or incorrect header validation
+
+**Solutions:**
+
+- Verify webhook secret matches exactly
+- Check `X-OTPIQ-Webhook-Secret` header name and value
+
+### Timeout Errors
+
+**Possible Causes:**
+
+- Webhook endpoint taking too long to respond
+- Heavy processing blocking the response
+
+**Solutions:**
+
+- Respond quickly (within 10 seconds)
+- Implement async processing for heavy operations
+
+## Testing Webhooks
+
+### Using webhook.site
+
+For testing purposes, you can use [webhook.site](https://webhook.site) to inspect webhook payloads:
+
+1. Go to [webhook.site](https://webhook.site)
+2. Copy the generated URL
+3. Use it as your `webhookUrl` in API requests
+4. Send a test SMS
+5. Monitor the webhook payloads in real-time
+
+### Sample Webhook Handler
+
+Here's a basic Node.js webhook handler example:
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+
+app.post("/webhooks/sms-status", (req, res) => {
+  const webhookSecret = req.headers["x-otpiq-webhook-secret"];
+  const payload = req.body;
+
+  // Verify webhook secret
+  if (webhookSecret !== "your_webhook_secret_123") {
+    return res.status(401).send("Unauthorized");
+  }
+
+  // Process the webhook
+  console.log("SMS Status Update:", {
+    smsId: payload.smsId,
+    status: payload.status,
+    channel: payload.channel,
+    isFinal: payload.isFinal,
+  });
+
+  // Update your database or trigger other actions
+  if (payload.status === "delivered") {
+    // Handle successful delivery
+  } else if (payload.status === "failed") {
+    // Handle failed delivery
+    console.log("Failure reason:", payload.reason);
+  }
+
+  // Respond quickly
+  res.status(200).send("OK");
+});
+
+app.listen(3000, () => {
+  console.log("Webhook server running on port 3000");
+});
+```
+
+## Rate Limits
+
+- **Webhook Delivery**: Up to 10 retries with exponential backoff
+- **Timeout**: 10 seconds per webhook request
+- **Queue Size**: Unlimited webhook queue
+
+<Warning>
+  If your webhook endpoint consistently fails or times out, OTPIQ may
+  temporarily disable webhook delivery to prevent system overload.
+</Warning>
