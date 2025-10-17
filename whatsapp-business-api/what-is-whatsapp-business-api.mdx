@@ -1,0 +1,343 @@
+---
+title: "What is WhatsApp Business API?"
+description: "Learn about WhatsApp Business API, its features, and how it works"
+icon: "whatsapp"
+---
+
+## What is WhatsApp Business API?
+
+WhatsApp Business API is an enterprise-level solution that enables businesses to communicate with customers at scale. Unlike the standard WhatsApp Business app, the API allows:
+
+- **Automated messaging** for notifications, alerts, and updates
+- **Two-way conversations** with customers
+- **Integration** with CRM systems and business tools
+- **Multiple agent support** for customer service teams
+- **Verified business profiles** with green checkmarks
+
+<Tip>
+  WhatsApp Business API is ideal for businesses sending high volumes of messages
+  or requiring advanced automation and integration capabilities.
+</Tip>
+
+## What are WhatsApp Business API Accounts Used For?
+
+WhatsApp Business API accounts serve various business communication needs:
+
+### Customer Notifications
+
+- Order confirmations and updates
+- Appointment reminders
+- Delivery notifications
+- Payment receipts
+
+### Authentication & Security
+
+- One-Time Passwords (OTPs)
+- Two-factor authentication (2FA)
+- Account verification codes
+- Login alerts
+
+### Customer Support
+
+- Automated responses to FAQs
+- Support ticket updates
+- Real-time assistance
+- Post-purchase follow-ups
+
+### Marketing & Engagement
+
+- Product announcements
+- Promotional offers (with user consent)
+- Cart abandonment reminders
+- Customer feedback requests
+
+## Understanding WhatsApp Message Templates
+
+Message templates are pre-approved message formats required by WhatsApp for business-initiated conversations. Templates must be submitted and approved before you can start messaging customers.
+
+### Why Templates?
+
+WhatsApp requires templates to:
+
+- Prevent spam and maintain quality
+- Ensure user privacy
+- Provide consistent user experience
+- Comply with messaging policies
+
+### Template Components
+
+A WhatsApp template consists of:
+
+| Component   | Description                           | Required     |
+| ----------- | ------------------------------------- | ------------ |
+| **Header**  | Text, image, video, or document       | Optional     |
+| **Body**    | Main message content with variables   | **Required** |
+| **Footer**  | Additional info (e.g., disclaimer)    | Optional     |
+| **Buttons** | Call-to-action or quick reply buttons | Optional     |
+
+## Types of WhatsApp Templates & Pricing
+
+WhatsApp offers three distinct template categories, each serving different purposes and having different pricing structures.
+
+### 1. Authentication Templates
+
+**Purpose:** Used for account verification, OTP codes, and security-related messages.
+
+**Pricing:** **25 IQD** per message
+
+**Important Restrictions:**
+
+<Warning>
+  Authentication templates have a **fixed, static format that cannot be
+  customized**. WhatsApp enforces this to maintain security standards and ensure
+  consistency across all authentication messages.
+</Warning>
+
+**Format Structure:**
+
+Authentication templates have a **fixed, preset structure** that includes:
+
+- **Fixed preset text**: `{{1}} is your verification code.`
+- **Optional security disclaimer**: `For your security, do not share this code.`
+- **Optional expiration warning**: `This code expires in {{2}} minutes.`
+- **Button options**: One-tap autofill, copy code button, or no button (zero-tap)
+
+**Example - Authentication Template:**
+
+```
+{{1}} is your verification code.
+
+For your security, do not share this code.
+
+This code expires in {{2}} minutes.
+
+Button: [Copy Code]
+```
+
+**Variables allowed:**
+
+- `{{1}}` - Your verification code (required)
+- `{{2}}` - Expiration time in minutes (optional, 1-90 minutes)
+
+**Button Types:**
+
+- **One-tap autofill**: Automatically fills the code in your app (Android only)
+- **Copy code**: Copies the code to clipboard
+- **Zero-tap**: No button, user manually enters the code
+
+**Use Cases:**
+
+- One-Time Passwords (OTP)
+- Login verification codes
+- Account activation codes
+- Password reset codes
+
+<Tip>
+  Authentication templates are the most affordable option, making them ideal for
+  high-volume verification needs like OTPs and login codes.
+</Tip>
+
+### 2. Utility Templates
+
+**Purpose:** Used for transactional updates, notifications, and important account-related information.
+
+**Pricing:** **25 IQD** per message
+
+**Customization:** **Fully customizable** - You have complete control over content, format, and design.
+
+**Example - Order Confirmation Template:**
+
+```
+Header: 🎉 Order Confirmed!
+
+Body: Hi {{1}},
+
+Your order #{{2}} has been confirmed and will be delivered by {{3}}.
+
+Track your order: {{4}}
+
+Total Amount: ${{5}}
+
+Thank you for shopping with us!
+
+Footer: Questions? Reply to this message.
+
+Buttons:
+[Track Order] [View Invoice]
+```
+
+**Variables:** Up to 10 variables allowed
+
+**Parameter Formats:**
+
+- **Positional**: `{{1}}`, `{{2}}`, `{{3}}` (ordered by appearance)
+- **Named**: `{{customer_name}}`, `{{order_number}}` (can appear in any order)
+
+**Use Cases:**
+
+- Order confirmations and updates
+- Shipping notifications
+- Appointment reminders
+- Payment receipts
+- Booking confirmations
+- Account alerts
+
+### 3. Marketing Templates
+
+**Purpose:** Used for promotional content, offers, and marketing campaigns.
+
+**Pricing:** **60 IQD** per message
+
+**Customization:** **Fully customizable** with additional requirements for opt-out options.
+
+**Requirements:**
+
+<Note>
+  Marketing templates **must include** an opt-out mechanism and are only allowed
+  if you have explicit user consent to send promotional messages. Users must
+  have opted in to receive marketing communications.
+</Note>
+
+**Important Restrictions:**
+
+<Warning>
+  Starting April 1, 2025, WhatsApp will temporarily pause delivery of marketing
+  template messages to users with United States phone numbers. This affects
+  global businesses sending to US users.
+</Warning>
+
+**Example - Promotional Offer Template:**
+
+```
+Header: [Image: Promotional Banner]
+
+Body: Hi {{1}}! 🎁
+
+Exclusive offer just for you!
+
+Get {{2}}% OFF on your next purchase of {{3}}.
+
+Use code: {{4}}
+Valid until: {{5}}
+
+Shop now and save big!
+
+Footer: Reply STOP to unsubscribe from promotional messages.
+
+Buttons:
+[Shop Now] [View Catalog]
+```
+
+**Variables:** Up to 10 variables allowed
+
+**Parameter Formats:**
+
+- **Positional**: `{{1}}`, `{{2}}`, `{{3}}` (ordered by appearance)
+- **Named**: `{{customer_name}}`, `{{discount_percent}}` (can appear in any order)
+
+**Use Cases:**
+
+- Product launches
+- Special offers and discounts
+- Seasonal promotions
+- Abandoned cart reminders
+- Customer re-engagement campaigns
+- Event invitations
+
+## Template Pricing Comparison
+
+| Template Type      | Cost Per Message | Customizable | Variables | Best For               | Approval Time |
+| ------------------ | ---------------- | ------------ | --------- | ---------------------- | ------------- |
+| **Authentication** | **25 IQD**       | ❌ No        | 1-2       | OTPs, Security codes   | 1-5 minutes   |
+| **Utility**        | **25 IQD**       | ✅ Yes       | Up to 10  | Transactional messages | 1-24 hours    |
+| **Marketing**      | **60 IQD**       | ✅ Yes       | Up to 10  | Promotional campaigns  | 1-48 hours    |
+
+<Note>
+  **Cost-effective tip:** Use Authentication or Utility templates (25 IQD each)
+  for transactional messages. Reserve Marketing templates (60 IQD) only for
+  promotional campaigns to optimize your messaging costs.
+</Note>
+
+## Template Creation Guidelines
+
+### Template Names
+
+- **Maximum length**: 512 characters
+- **Format**: Lowercase alphanumeric characters and underscores only
+- **Uniqueness**: Names are not unique - you can have multiple templates with the same name in different languages
+
+### Template Limits
+
+- **Creation limit**: Maximum 100 templates per WhatsApp Business Account per hour
+- **Total templates**:
+  - Unverified business portfolio: 250 templates per account
+  - Verified business portfolio: Up to 6,000 templates per account
+
+### Language Requirements
+
+- Each template must be created for each language you plan to use
+- Template strings and variables are not automatically translated
+- You must provide content in the appropriate language for each template
+
+### Template Status
+
+Templates must have `APPROVED` status before they can be sent. Status options include:
+
+- **In-Review**: Under review (up to 24 hours)
+- **Approved**: Ready to send
+- **Rejected**: Violates policies or guidelines
+- **Paused**: Temporarily disabled due to poor quality feedback
+- **Disabled**: Permanently disabled due to recurring issues
+
+## Choosing the Right Template Type
+
+**Use Authentication templates when:**
+
+- Sending OTPs or verification codes
+- User security is the priority
+- You want zero messaging costs
+- You can work with the standard format
+
+**Use Utility templates when:**
+
+- Sending transactional updates
+- Providing order/booking information
+- Sharing important account notifications
+- You need custom branding and messaging
+
+**Use Marketing templates when:**
+
+- Running promotional campaigns
+- Announcing new products or offers
+- Re-engaging customers
+- You have explicit consent for marketing
+
+<Note>
+  Templates must be approved by WhatsApp before use. Approval time varies:
+  Authentication templates are usually approved within minutes, while Utility
+  and Marketing templates may take up to 48 hours.
+</Note>
+
+## Ready to Get Started?
+
+Now that you understand WhatsApp Business API and its capabilities, you're ready to connect your account to Otpiq.
+
+<CardGroup cols={2}>
+  <Card
+    title="Connect Your API"
+    icon="whatsapp"
+    href="/whatsapp-business-api/how-to-connect-whatsapp-api"
+  >
+    Follow our step-by-step guide to integrate your WhatsApp Business API with
+    Otpiq
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore our comprehensive API documentation for sending messages
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+- [Explore the API Reference](/api-reference/introduction)
+- [Learn about Webhook Integration](/essentials/how-webhook-works)
+- [Start Sending Messages](/quickstart)

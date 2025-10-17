@@ -1,0 +1,169 @@
+---
+title: "Connect Account to OTPIQ"
+description: "Step-by-step guide to integrate your WhatsApp Business API account with Otpiq"
+icon: "whatsapp"
+---
+
+## How to Connect Your WhatsApp Business API to Otpiq
+
+Follow these steps to integrate your WhatsApp Business API account with Otpiq:
+
+### Step 1: Obtain WhatsApp Business API Access
+
+You'll need:
+
+- A Meta Business Account
+- A WhatsApp Business API phone number
+- Verified business information
+
+<Warning>
+  The phone number cannot be used on WhatsApp or WhatsApp Business app
+  simultaneously.
+</Warning>
+
+### Step 2: Prepare Your Facebook Account
+
+Ensure you have:
+
+- A Facebook account with access to your Meta Business Account
+- Admin permissions for your WhatsApp Business API account
+- Your WhatsApp Business phone number ready for verification
+
+### Step 3: Connect Through Otpiq Dashboard
+
+1. **Log in to your Otpiq account**
+
+   Go to [app.otpiq.com](https://app.otpiq.com) and sign in to your account
+
+2. **Navigate to WhatsApp settings**
+
+   In your dashboard, go to **WhatsApp** → **Account**
+
+3. **Connect your WhatsApp account**
+
+   Click **"Connect WhatsApp Account"** to start the integration process
+
+4. **Complete Facebook signup**
+
+   You'll be redirected to Facebook's embedded signup process where you'll:
+
+   - Sign in to your Facebook account
+   - Connect your WhatsApp Business API account
+   - Grant necessary permissions to Otpiq
+
+5. **Verify connection**
+
+   Once the Facebook signup is complete, your WhatsApp Business API will be automatically connected to Otpiq
+
+### Step 4: Create and Submit Templates
+
+1. Navigate to the **Templates** section in Otpiq
+2. Click **Create New Template**
+3. Design your template with:
+   - Template name (lowercase, underscores only)
+   - Category (Marketing, Utility, or Authentication)
+   - Language
+   - Content (header, body, footer, buttons)
+4. Submit for WhatsApp approval
+5. Wait for approval (usually within 24 hours)
+
+#### Template Types Overview
+
+Here are examples of the three main template categories:
+
+**Authentication Template**
+
+<img src="/images/auth_template.webp" alt="Authentication Template Example" />
+
+**Utility Template**
+
+<img src="/images/utility_template.webp" alt="Utility Template Example" />
+
+**Marketing Template**
+
+<img src="/images/marketing_template.webp" alt="Marketing Template Example" />
+
+### Step 5: Start Sending Messages
+
+Once your templates are approved, you can send messages using Otpiq's API. Here's an example of sending a WhatsApp template:
+
+```json
+{
+  "phoneNumber": "9647501580221",
+  "smsType": "whatsapp-template",
+  "provider": "whatsapp",
+  "templateName": "auth_temp_new_no_exp",
+  "whatsappAccountId": "68c46fecc504cdcec8fb3ef2",
+  "whatsappPhoneId": "68c46ff3c504cdcec8fb3f5e",
+  "templateParameters": {
+    "body": {
+      "1": "123456"
+    }
+  }
+}
+```
+
+<Tip>
+  **Easy API Building**: You can build and test your API calls easily using the
+  Otpiq dashboard. Go to [Dashboard → Messaging → Send
+  SMS](https://app.otpiq.com/projects) to create and test your WhatsApp template
+  messages without writing code.
+</Tip>
+
+<Tip>
+  Use Otpiq's API or dashboard to send messages using your approved templates.
+  Check our [API Reference](/api-reference/introduction) for detailed
+  documentation.
+</Tip>
+
+## Best Practices
+
+### Template Design
+
+- Keep messages clear and concise
+- Use variables for dynamic content
+- Include opt-out instructions for marketing messages
+- Test templates before submission
+
+### Compliance
+
+- Obtain user consent before messaging
+- Respect opt-out requests immediately
+- Follow WhatsApp Commerce and Business Policies
+- Maintain message quality scores
+
+### Optimization
+
+- Monitor delivery and read rates
+- A/B test different template variations
+- Respond to customer replies promptly
+- Keep templates updated with current information
+
+## Troubleshooting Common Issues
+
+| Issue                            | Solution                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Template rejected                | Review WhatsApp policies, avoid promotional language in utility templates, ensure proper categorization |
+| Connection failed                | Ensure you have admin access to your Facebook Business Account and WhatsApp Business API                |
+| Facebook signup issues           | Check that your Facebook account has proper permissions and try clearing browser cache                  |
+| Template paused                  | Address negative customer feedback, improve message quality and relevance                               |
+| US users not receiving marketing | Marketing templates to US users will be paused starting April 1, 2025                                   |
+
+## Common Template Rejection Reasons
+
+- **Miscategorization**: Using promotional language in utility templates
+- **Policy violations**: Content that violates WhatsApp's commerce and business policies
+- **Incorrect parameters**: Using variable parameters incorrectly or inconsistently
+- **Missing opt-out**: Marketing templates without proper opt-out mechanisms
+- **Misleading content**: False or deceptive information in templates
+
+<Note>
+  Need help? Contact our support team at info@otpiq.com or check our
+  [documentation](/quickstart) for more guides.
+</Note>
+
+## Next Steps
+
+- [Explore the API Reference](/api-reference/introduction)
+- [Learn about Webhook Integration](/essentials/how-webhook-works)
+- [Start Sending Messages](/quickstart)

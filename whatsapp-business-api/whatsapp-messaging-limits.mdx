@@ -1,0 +1,183 @@
+---
+title: "Message Limits and Scaling"
+description: "A comprehensive guide to WhatsApp Business API messaging limits, scaling paths, and how to increase your daily message capacity"
+icon: "whatsapp"
+---
+
+# Understanding WhatsApp Business API Message Limits
+
+WhatsApp Business API message limits determine how many unique customers you can message each day. Understanding these limits is crucial for planning your messaging strategy and scaling your business communications.
+
+## What Are Message Limits?
+
+Message limits are the **maximum number of unique WhatsApp user phone numbers** your business can deliver messages to, outside of customer service windows, within a moving 24-hour period.
+
+<Info>
+  **Key Point**: Limits are calculated at the **business portfolio level** and
+  shared by all phone numbers within that portfolio. This means if you have
+  multiple WhatsApp Business numbers, they all share the same daily limit.
+</Info>
+
+## Starting Limits
+
+When you first create a WhatsApp Business API account, you start with:
+
+- **New Business Portfolios**: 250 messages per day
+- **New Phone Numbers**: Share the portfolio's limit (not individual 250 limit)
+
+## Limit Tiers
+
+Your messaging limit can be increased through these tiers:
+
+| Tier             | Daily Message Limit | How to Achieve                    |
+| ---------------- | ------------------- | --------------------------------- |
+| **Tier 250**     | 250 messages        | Starting limit for new portfolios |
+| **Tier 2,000**   | 2,000 messages      | Complete scaling path             |
+| **Tier 10,000**  | 10,000 messages     | Automatic scaling                 |
+| **Tier 100,000** | 100,000 messages    | Automatic scaling                 |
+| **Unlimited**    | No limit            | Automatic scaling                 |
+
+## How to Increase Your Limit to 2,000
+
+To move from 250 to 2,000 messages per day, you need to complete **one** of these scaling paths:
+
+### Option 1: Verify Your Business
+
+Complete business verification through Meta Business Manager. This is the fastest way to increase your limit.
+
+### Option 2: Send High-Quality Messages
+
+Send 2,000 delivered messages outside of customer service windows to unique WhatsApp users in a 30-day period using templates with high quality ratings.
+
+<Warning>
+  **Quality Matters**: Your message quality rating significantly impacts your
+  ability to scale. Focus on sending relevant, valuable messages to maintain
+  high quality scores.
+</Warning>
+
+## Automatic Scaling (2,000+ Messages)
+
+Once you reach 2,000 messages, WhatsApp will automatically increase your limit if you meet these criteria:
+
+- **High-Quality Messages**: You're sending high-quality messages across all phone numbers and templates
+- **Utilization**: In the last 7 days, you've used at least half of your current messaging limit
+
+<Success>
+  **Fast Scaling**: Automatic limit increases happen within **6 hours** when you
+  meet the criteria.
+</Success>
+
+## Portfolio-Based Limits
+
+WhatsApp Business API uses a portfolio-based limit system where all phone numbers within a business portfolio share the same daily messaging limit.
+
+### How Portfolio-Based Limits Work
+
+- **Shared Capacity**: All WhatsApp Business phone numbers in your portfolio share the same daily limit
+- **Immediate Access**: New phone numbers automatically get the portfolio's current limit
+- **Unlimited Numbers**: You can add as many phone numbers as needed without affecting your limit
+- **Centralized Management**: One limit to manage across all your business numbers
+
+## Checking Your Current Limit
+
+1. Go to [app.otpiq.com](https://app.otpiq.com) and log in to your account
+2. Navigate to **WhatsApp** → **Account**
+3. View your current messaging limit and scaling information
+
+## Message Quality and Scaling
+
+Your ability to scale depends heavily on message quality. WhatsApp evaluates:
+
+- **Relevance**: Messages should be relevant to recipients
+- **Engagement**: Recipients should engage positively with your messages
+- **Compliance**: Follow WhatsApp's commerce and business policies
+- **Template Quality**: Use well-designed, approved templates
+
+<Note>
+  **Quality Rating**: Maintain "Medium" or "High" quality ratings across all
+  your templates to ensure smooth scaling.
+</Note>
+
+## Customer Service Windows
+
+Important: Message limits only apply to messages sent **outside** of customer service windows. Within 24 hours of a customer messaging you, you can send unlimited messages to that customer.
+
+<Info>
+  **Customer Service Window**: 24-hour period after a customer initiates contact
+  where you can send unlimited messages without counting against your daily
+  limit.
+</Info>
+
+## Best Practices for Scaling
+
+### 1. Start with High-Quality Templates
+
+- Use clear, relevant messaging
+- Avoid promotional language in utility templates
+- Include proper opt-out mechanisms for marketing
+
+### 2. Monitor Your Usage
+
+- Track your daily message consumption
+- Aim to use at least 50% of your limit for automatic scaling
+- Monitor quality ratings regularly
+
+### 3. Plan Your Scaling Strategy
+
+- Begin with business verification for fastest scaling
+- Focus on utility and authentication templates (lower cost, higher approval rates)
+- Build up to 2,000 messages before expanding to marketing
+
+### 4. Maintain Quality Standards
+
+- Respond promptly to customer messages
+- Avoid spam-like behavior
+- Follow WhatsApp's best practices
+
+## Common Scaling Issues
+
+| Issue                   | Solution                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| **Stuck at 250**        | Complete business verification or send 2,000 high-quality messages                            |
+| **Quality Rating Low**  | Improve message relevance and engagement                                                      |
+| **Not Utilizing Limit** | Increase message volume while maintaining quality                                             |
+| **Template Rejections** | [Review WhatsApp policies](https://business.whatsapp.com/policy) and improve template content |
+
+## Throughput Limits
+
+Beyond daily message limits, WhatsApp also has throughput limits (messages per second):
+
+- **Standard**: 80 messages per second
+- **High Throughput**: 1,000 messages per second (requires unlimited daily limit)
+
+To qualify for high throughput:
+
+- Portfolio must have unlimited messaging limit
+- Phone number must message 100K+ unique users in 24 hours
+- Maintain Medium or High quality rating
+
+## Next Steps
+
+Ready to start scaling your WhatsApp messaging? Here's what to do:
+
+1. **Connect Your Account**: Follow our [WhatsApp Business API connection guide](/whatsapp-business-api/how-to-connect-whatsapp-api)
+2. **Create Quality Templates**: Design templates that provide value to your customers
+3. **Monitor Performance**: Track your message quality and usage
+4. **Scale Gradually**: Build up to higher limits through consistent, high-quality messaging
+
+<CardGroup cols={2}>
+  <Card
+    title="Connect WhatsApp API"
+    icon="whatsapp"
+    href="/whatsapp-business-api/how-to-connect-whatsapp-api"
+  >
+    Learn how to connect your WhatsApp Business API to Otpiq
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore our comprehensive API documentation
+  </Card>
+</CardGroup>
+
+---
+
+_Need help with your WhatsApp Business API setup? Contact our support team at info@otpiq.com or check our [documentation](/quickstart) for more guides._
