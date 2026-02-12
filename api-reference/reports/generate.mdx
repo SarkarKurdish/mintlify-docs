@@ -1,0 +1,26 @@
+---
+title: "Generate Delivery Report"
+description: "Create CSV delivery reports for SMS/messages in a date range"
+openapi: "POST /reports/generate"
+---
+
+<Info>
+Use the `downloadUrl` from the response to download the CSV file directly. There is no separate download endpoint—reports are available for **30 days** after generation.
+</Info>
+
+## CSV content
+
+The downloaded CSV includes these columns:
+
+| Column | Description |
+|--------|-------------|
+| Message ID | Internal message identifier (`smsId`) |
+| Phone Number | Recipient phone number |
+| Sender ID | Sender ID name (or "System") |
+| Cost (IQD) | Cost in IQD |
+| Message Type | OTP, Custom, WhatsApp Template, or Other |
+| Delivery Status | `pending`, `sent`, `delivered`, `read`, or `failed` |
+| Error Reason | Last error in the message flow (empty if none) |
+| Refunded | Yes/No |
+| Created At | ISO 8601 |
+| Sent At | ISO 8601 (if sent) |

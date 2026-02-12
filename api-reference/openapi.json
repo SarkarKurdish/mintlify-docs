@@ -45,6 +45,10 @@
     {
       "name": "Webhooks",
       "description": "Real-time delivery status notifications via webhooks"
+    },
+    {
+      "name": "Delivery Reports",
+      "description": "Generate and list CSV delivery reports for SMS/messages in a date range"
     }
   ],
   "paths": {
@@ -904,6 +908,207 @@
           }
         }
       }
+    },
+    "/reports": {
+      "get": {
+        "tags": ["Delivery Reports"],
+        "summary": "List delivery reports",
+        "description": "Returns a paginated list of delivery reports for the authenticated project, sorted by creation date (newest first). Each report includes `downloadUrl` for direct download; there is no download-by-id endpoint.",
+        "operationId": "listDeliveryReports",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100, "example": 50},
+            "description": "Number of reports to return. Min: 1, max: 500."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "string", "example": "available,expired"},
+            "description": "Comma-separated list of report statuses to filter by. Allowed: available, expired, deleted."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of delivery reports. Each report includes downloadUrl for direct CSV download.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["_id", "reportId", "downloadUrl", "recordCount", "dateRange", "status"],
+                    "properties": {
+                      "_id": {"type": "string", "description": "MongoDB ObjectId of the report", "examples": ["65a1b2c3d4e5f6789012345"]},
+                      "reportId": {"type": "string", "description": "Same as _id; convenience for API consumers"},
+                      "project": {"type": "string", "description": "Project ObjectId"},
+                      "filename": {"type": "string", "description": "Storage filename"},
+                      "fileId": {"type": "string", "description": "Storage provider file identifier"},
+                      "downloadUrl": {"type": "string", "format": "uri", "description": "Use this URL to download the CSV. No separate download endpoint."},
+                      "recordCount": {"type": "integer", "description": "Number of message rows in the report"},
+                      "dateRange": {
+                        "type": "object",
+                        "properties": {
+                          "startDate": {"type": "string", "format": "date-time"},
+                          "endDate": {"type": "string", "format": "date-time"}
+                        }
+                      },
+                      "filters": {"type": "object", "description": "Applied filters"},
+                      "expiresAt": {"type": "string", "format": "date-time", "description": "Reports valid for 30 days"},
+                      "status": {"type": "string", "enum": ["available", "expired", "deleted"]},
+                      "createdAt": {"type": "string", "format": "date-time"},
+                      "updatedAt": {"type": "string", "format": "date-time"}
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": [{"_id": "65a1b2c3d4e5f6789012345", "reportId": "65a1b2c3d4e5f6789012345", "filename": "delivery-report-myproject-2026-02-12.csv", "downloadUrl": "https://cdn.example.com/files/delivery-report-....csv", "recordCount": 150, "dateRange": {"startDate": "2026-01-01T00:00:00.000Z", "endDate": "2026-01-31T23:59:59.999Z"}, "status": "available", "createdAt": "2026-02-12T12:00:00.000Z"}]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status query value",
+            "content": {
+              "application/json": {
+                "schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}},
+                "examples": {"invalid_status": {"summary": "Invalid report status", "value": {"error": "Invalid report status: invalid_value"}}}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/reports/generate": {
+      "post": {
+        "tags": ["Delivery Reports"],
+        "summary": "Generate delivery report",
+        "description": "Creates a new delivery report for the authenticated project for the given date range. The report is generated as a CSV, uploaded to storage, and the response includes a **download URL** to fetch the file. No separate download endpoint is used.",
+        "operationId": "generateDeliveryReport",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "description": "Report generation parameters. startDate and endDate are required.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["startDate", "endDate"],
+                "properties": {
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Start of the date range (ISO 8601, e.g. 2026-01-01T00:00:00.000Z)",
+                    "examples": ["2026-01-01T00:00:00.000Z"]
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "End of the date range (ISO 8601). Must be on or after startDate.",
+                    "examples": ["2026-01-31T23:59:59.999Z"]
+                  },
+                  "phoneNumbers": {
+                    "type": "array",
+                    "items": {"type": "string", "pattern": "^\\+?[0-9]+$"},
+                    "description": "If provided, only messages to these phone numbers are included",
+                    "examples": [["+9647701234567"]]
+                  },
+                  "statuses": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["pending", "sent", "delivered", "read", "failed"]},
+                    "description": "If provided, only messages with these delivery statuses are included",
+                    "examples": [["sent", "failed"]]
+                  }
+                }
+              },
+              "examples": {
+                "basic": {"summary": "Date range only", "value": {"startDate": "2026-01-01T00:00:00.000Z", "endDate": "2026-01-31T23:59:59.999Z"}},
+                "filtered": {"summary": "With filters", "value": {"startDate": "2026-01-01T00:00:00.000Z", "endDate": "2026-01-31T23:59:59.999Z", "phoneNumbers": ["+9647701234567"], "statuses": ["sent", "failed"]}}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Delivery report generated successfully. Use downloadUrl to fetch the CSV file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["_id", "reportId", "downloadUrl", "recordCount", "dateRange", "expiresAt", "status", "message"],
+                  "properties": {
+                    "_id": {"type": "string", "description": "MongoDB ObjectId of the report", "examples": ["65a1b2c3d4e5f6789012345"]},
+                    "reportId": {"type": "string", "description": "Same as _id; convenience for API consumers"},
+                    "project": {"type": "string", "description": "Project ObjectId"},
+                    "filename": {"type": "string", "description": "Storage filename"},
+                    "fileId": {"type": "string", "description": "Storage provider file identifier"},
+                    "downloadUrl": {"type": "string", "format": "uri", "description": "Use this URL to download the CSV. No separate download endpoint."},
+                    "recordCount": {"type": "integer", "description": "Number of message rows in the report"},
+                    "dateRange": {
+                      "type": "object",
+                      "properties": {
+                        "startDate": {"type": "string", "format": "date-time"},
+                        "endDate": {"type": "string", "format": "date-time"}
+                      }
+                    },
+                    "filters": {
+                      "type": "object",
+                      "properties": {"startDate": {"type": "string"}, "endDate": {"type": "string"}, "phoneNumbers": {"type": "array"}, "statuses": {"type": "array"}}
+                    },
+                    "expiresAt": {"type": "string", "format": "date-time", "description": "Reports valid for 30 days"},
+                    "status": {"type": "string", "enum": ["available", "expired", "deleted"]},
+                    "createdAt": {"type": "string", "format": "date-time"},
+                    "updatedAt": {"type": "string", "format": "date-time"},
+                    "message": {"type": "string", "description": "Success message", "examples": ["Delivery report generated successfully"]}
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {"_id": "65a1b2c3d4e5f6789012345", "reportId": "65a1b2c3d4e5f6789012345", "filename": "delivery-report-myproject-2026-02-12T12-00-00-000Z-a1b2c3d4.csv", "fileId": "4_z1234567890_f1020304050607080", "downloadUrl": "https://cdn.example.com/files/delivery-report-....csv", "recordCount": 150, "dateRange": {"startDate": "2026-01-01T00:00:00.000Z", "endDate": "2026-01-31T23:59:59.999Z"}, "filters": {"startDate": "2026-01-01T00:00:00.000Z", "endDate": "2026-01-31T23:59:59.999Z", "phoneNumbers": ["+9647701234567"], "statuses": ["sent", "failed"]}, "expiresAt": "2026-03-14T12:00:00.000Z", "status": "available", "createdAt": "2026-02-12T12:00:00.000Z", "updatedAt": "2026-02-12T12:00:00.000Z", "message": "Delivery report generated successfully"}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (invalid dates, status values, etc.)",
+            "content": {
+              "application/json": {
+                "schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}},
+                "examples": {
+                  "date_range": {"summary": "Invalid date range", "value": {"error": "Start date cannot be after end date"}},
+                  "invalid_status": {"summary": "Invalid status value", "value": {"error": "Invalid status: invalid_status"}}
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "404": {
+            "description": "Project not found or no messages in date range",
+            "content": {
+              "application/json": {
+                "schema": {"type": "object", "required": ["error"], "properties": {"error": {"type": "string"}}},
+                "examples": {
+                  "project": {"summary": "Project not found", "value": {"error": "Project not found"}},
+                  "no_data": {"summary": "No messages in range", "value": {"error": "No data found for the specified date range"}}
+                }
+              }
+            }
+          },
+          "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
     }
   },
   "components": {
@@ -1410,6 +1615,20 @@
       }
     },
     "responses": {
+      "BadRequest": {
+        "description": "Validation failed or bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["error"],
+              "properties": {
+                "error": {"type": "string", "description": "Error message"}
+              }
+            }
+          }
+        }
+      },
       "Unauthorized": {
         "description": "Unauthorized",
         "content": {

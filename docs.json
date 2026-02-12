@@ -64,6 +64,13 @@
             "pages": [
               "api-reference/sender-id/get"
             ]
+          },
+          {
+            "group": "Delivery Reports Endpoints",
+            "pages": [
+              "api-reference/reports/generate",
+              "api-reference/reports/list"
+            ]
           }
         ]
       }
