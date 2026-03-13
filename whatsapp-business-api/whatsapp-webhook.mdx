@@ -1,0 +1,108 @@
+---
+title: "WhatsApp Inbound Webhooks"
+description: "Receive real-time notifications to your server when inbound messages hit your WhatsApp Business number"
+icon: whatsapp
+---
+
+We've added **WhatsApp inbound webhooks** so you can get real-time notifications when someone messages your WhatsApp Business number. Instead of polling or checking the dashboard, your backend gets a POST request as soon as a message arrives.
+
+<CardGroup cols={2}>
+  <Card title="Automated replies" icon="robot">
+    Trigger bots or auto-responders from your own infrastructure.
+  </Card>
+  <Card title="CRM and support" icon="headset">
+    Push conversations into your ticketing or CRM system in real time.
+  </Card>
+  <Card title="Logging and analytics" icon="chart-simple">
+    Record or analyze inbound traffic in your data warehouse.
+  </Card>
+  <Card title="Custom workflows" icon="diagram-project">
+    Run any logic (notifications, queues, integrations) when a message is received.
+  </Card>
+</CardGroup>
+
+<Info>
+  Configuration is **per phone number**. You can choose which numbers send events to your endpoint and keep the rest internal to Otpiq (e.g., for the built-in inbox only).
+</Info>
+
+## Security and Verification
+
+For each webhook you configure, we generate a unique **webhook secret**. This token looks like `otpiq_live_sk` followed by 64 hex characters.
+
+<Warning>
+  **Never expose your secret** in client-side code or public repositories. Store it securely in environment variables or a secrets manager.
+</Warning>
+
+### Verifying the Webhook Signature
+
+We sign every webhook request using HMAC-SHA256 so you can verify that it came from Otpiq and hasn't been tampered with.
+
+<Steps>
+  <Step title="Read the raw body">
+    Read the raw request body as UTF-8 (before parsing it as JSON).
+  </Step>
+  <Step title="Get the headers">
+    Read the `X-OTPIQ-Webhook-Timestamp` and `X-OTPIQ-Webhook-Signature` headers.
+  </Step>
+  <Step title="Build the signature string">
+    Concatenate the timestamp and the raw body with a dot: `timestamp + "." + raw_body`.
+  </Step>
+  <Step title="Compute the HMAC">
+    Compute the HMAC-SHA256 of the concatenated string using your **webhook secret** as the key.
+  </Step>
+  <Step title="Compare the signatures">
+    Compare your computed hex value with the `sha256=` value from the signature header. Use a constant-time comparison to avoid timing attacks.
+  </Step>
+</Steps>
+
+<Check>
+  If the signatures match, process the request. If they don't, reject it with a `401 Unauthorized` or `403 Forbidden` status.
+</Check>
+
+### Webhook Headers
+
+We include several headers with every request to provide context and support idempotency.
+
+| Header | Description |
+|---|---|
+| `Content-Type` | `application/json` |
+| `X-OTPIQ-Webhook-Event` | The event type (e.g., `whatsapp.inbound_message.received`). |
+| `X-OTPIQ-Webhook-Event-Id` | Unique ID for this event. Use this to deduplicate requests. |
+| `X-OTPIQ-Webhook-Timestamp` | The timestamp used in the signature. |
+| `X-OTPIQ-Webhook-Attempt` | The delivery attempt number (1, 2, 3, etc.). |
+| `X-OTPIQ-Webhook-Signature` | `sha256=<hex>` format signature for verification. |
+
+## Delivery and Retries
+
+A delivery is considered successful when your endpoint returns a **2xx status code** within our timeout window. Redirects are not followed.
+
+### Retry Strategy
+
+If your endpoint returns a non-2xx status, times out, or fails to connect, we use the following retry strategy:
+
+<AccordionGroup>
+  <Accordion title="Immediate Attempts (First 3 Tries)" icon="bolt">
+    We make up to 3 attempts in quick succession:
+    - **1st attempt**: Immediate (or after a 1s delay in the first burst)
+    - **2nd attempt**: 10 seconds after the first attempt
+    - **3rd attempt**: 15 seconds after the second attempt
+  </Accordion>
+
+  <Accordion title="Queued Hourly Retries" icon="clock">
+    If all 3 immediate attempts fail, the event is marked as `queued_retry`.
+    - We schedule the next try in **about 1 hour**.
+    - A background job processes these retries hourly.
+    - If it fails again, it's rescheduled for another hour.
+  </Accordion>
+
+  <Accordion title="Event Expiration (2 Days)" icon="trash">
+    We continue hourly retries for **up to 2 days**. After that, the event is discarded and no further delivery attempts are made.
+  </Accordion>
+</AccordionGroup>
+
+### Log Retention
+
+You can view **webhook event logs** for each phone number in the dashboard. These logs show the status, attempt count, and the last error or response received.
+
+- Logs are **retained for 15 days** before being automatically deleted.
+- During this 15-day window, you can inspect attempts and **manually retry** failed events from the UI.

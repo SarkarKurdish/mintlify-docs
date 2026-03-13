@@ -32,7 +32,8 @@
             "pages": [
               "whatsapp-business-api/what-is-whatsapp-business-api",
               "whatsapp-business-api/how-to-connect-whatsapp-api",
-              "whatsapp-business-api/whatsapp-messaging-limits"
+              "whatsapp-business-api/whatsapp-messaging-limits",
+              "whatsapp-business-api/whatsapp-webhook"
             ]
           }
         ]
