@@ -1,0 +1,117 @@
+---
+title: "OTPIQ Anti-Fraud System"
+description: "Protect your project from spam and abuse using OTPIQ's advanced phone number and IP address rate limiting features."
+icon: "shield-check"
+---
+
+OTPIQ provides a robust fraud protection system that monitors both phone numbers and IP addresses to cut down on abuse, save your credit balance, and protect end-users from being spammed.
+
+To get started, you first need to enable rate limiting for your project.
+
+## Enabling Rate Limiting
+
+<Steps>
+  <Step title="Navigate to Project Settings">
+    Log in to the OTPIQ Dashboard, go to your **Settings**, and select the **Limits** tab.
+  </Step>
+  <Step title="Configure Phone Number Limits">
+    Set how many OTPs a single phone number can receive within a specific time frame (e.g., maximum of 5 OTPs per 10 minutes).
+  </Step>
+  <Step title="Configure IP Address Limits">
+    Set how many OTPs a single IP address can send across all phone numbers within a specific time frame.
+  </Step>
+</Steps>
+
+---
+
+## Types of Protection
+
+OTPIQ defends your project on two distinct levels:
+
+<Tabs>
+  <Tab title="Phone Number Rate Limiting">
+    This works as a recipient-level anti-fraud measure. It prevents anyone from sending an abnormal number of messages to the exact same phone number.
+    
+    <CardGroup cols={2}>
+      <Card title="Saves Credits" icon="coins" color="green">
+        Prevents your project's balance from being drained by repeated requests.
+      </Card>
+      <Card title="Protects Users" icon="user-shield" color="blue">
+        Ensures the recipient does not get spammed with endless OTP messages.
+      </Card>
+    </CardGroup>
+  </Tab>
+  
+  <Tab title="IP Address Rate Limiting">
+    Attackers often try to bypass phone number limits by cycling through random phone numbers. IP address rate limiting stops this by restricting how many requests a single IP can make, regardless of the phone numbers being targeted.
+
+    <Warning>
+      **Integration Requirement:** 
+      To make IP address limiting work, you must include the requester's IP address in your API request body. 
+      
+      Pass it inside an `anti_fraud` object using the `requester_ip` property:
+      ```json
+      {
+        "phone_number": "+1234567890",
+        "anti_fraud": {
+          "requester_ip": "192.168.1.1"
+        }
+      }
+      ```
+    </Warning>
+  </Tab>
+</Tabs>
+
+---
+
+## The Fraud Protection Dashboard
+
+Once rate limiting is enabled, the **Fraud Protection** page in your dashboard provides a comprehensive view of blocked activity.
+
+### Overview Metrics & Charts
+- **Total Blocked:** See exactly how many IP addresses and phone numbers are currently "jailed".
+- **Historical Data:** View cards showing how many targets were rate-limited today and over the last 30 days.
+- **Visual Charts:** Track total blocked requests per day and see a breakdown of the countries where blocked IPs originate.
+
+### Managing Blocked Activity
+
+The dashboard includes detailed tables for both blocked IP addresses and blocked phone numbers. These tables show the target, location, how many requests they sent before being jailed, and how many blocked requests they've attempted since.
+
+When dealing with a blocked IP address, you have three action choices:
+1. **Remove jail time:** Allows the IP to start sending OTPs again immediately.
+2. **Add to allow list:** Whitelists the IP so it will never be rate-limited again (ideal for your own dev servers).
+3. **Add to permanent ban list:** Completely blocks the IP from ever sending OTPs to your project.
+
+---
+
+## Deep Dive: Inspect & Risk Assessment
+
+When you are unsure what action to take on a blocked IP, you can use the **Inspect** button to gather more context.
+
+<CardGroup cols={2}>
+  <Card title="Detailed IP Context" icon="magnifying-glass">
+    View the IP's country, city, ISP, and a map of its approximate location. It also identifies whether the IP is a standard residential address or hiding behind a proxy/VPN.
+  </Card>
+  <Card title="Activity Timeline" icon="chart-timeline">
+    See exactly how many times this specific IP has been jailed in your project to determine if it's an honest mistake or active abuse.
+  </Card>
+</CardGroup>
+
+### AI-Powered Risk Assessment
+
+Reviewing data manually can be overwhelming during a high-traffic attack. OTPIQ does the heavy lifting by combining your project's data with external threat signals. 
+
+Clicking the **Risk Assessment** button generates a report that includes:
+- An overall **Threat Level**
+- A clear **Verdict** on what action you should take
+
+This allows you to confidently decide whether to let the jail time expire naturally, remove it, or permanently block the attacker.
+
+---
+
+## IP Allow & Ban Lists
+
+Under the **IP List** tab, you can manually manage your IP access controls independently of the automated rate limiting:
+
+- **Allowed IP Addresses:** Add IPs that should bypass all rate limits (e.g., your backend servers or trusted partners).
+- **Banned IP Addresses:** Manually add IPs that should be permanently blocked from interacting with your project.

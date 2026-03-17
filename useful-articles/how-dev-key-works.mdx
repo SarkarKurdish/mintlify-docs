@@ -1,0 +1,44 @@
+---
+title: "How Dev Keys Work"
+description: "Learn how to use Development Keys to safely test your integration without sending messages to real users."
+icon: "key"
+---
+
+When building and testing your integration with OTPIQ, you want to ensure that OTP messages and notifications are not accidentally sent to real users' phone numbers. To solve this, OTPIQ provides **Development Keys (Dev Keys)**.
+
+A Dev Key acts as a safe alternative to your production API key during the development phase.
+
+## What is a Dev Key?
+
+A Dev Key is a special type of API key tied to a specific "development phone number" that you define. 
+
+When you use a Dev Key in your API requests, **OTPIQ will intercept the request and send the message exclusively to your defined development phone number**, completely ignoring the phone number provided in the API request payload.
+
+<Info>
+This means you can safely test your application using real user data or dummy data without the risk of spamming actual users. All test messages will conveniently route to your own device.
+</Info>
+
+## How to set up and use a Dev Key
+
+Setting up a Dev Key is quick and can be done directly from your dashboard.
+
+<Steps>
+  <Step title="Navigate to Project Settings">
+    Log in to the [OTPIQ Dashboard](https://app.otpiq.com) and go to your **Project Settings**.
+  </Step>
+  <Step title="Create a Dev Key">
+    Locate the Development Keys section and create a new key. During creation, you will be prompted to define a **development phone number**.
+  </Step>
+  <Step title="Replace your API Key">
+    In your development environment or local codebase, replace your production API key with the newly generated Dev Key.
+  </Step>
+  <Step title="Send test requests">
+    Send API requests exactly as you would in production. 
+    
+    No matter what `phone_number` you pass in the API request body, the message will always be delivered to the development phone number you defined in Step 2.
+  </Step>
+</Steps>
+
+<Note>
+Remember to swap your Dev Key back to your production API key when deploying your application to your live environment!
+</Note>
