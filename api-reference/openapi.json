@@ -49,6 +49,10 @@
     {
       "name": "Delivery Reports",
       "description": "Generate and list CSV delivery reports for SMS/messages in a date range"
+    },
+    {
+      "name": "Pricing",
+      "description": "Retrieve international SMS pricing information"
     }
   ],
   "paths": {
@@ -909,6 +913,315 @@
         }
       }
     },
+    "/international-sms-pricing": {
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "summary": "List international SMS pricing",
+        "description": "Paginated international SMS price rows. Each item's `price` is the billed amount in IQD per one SMS segment (one 140-character segment)",
+        "operationId": "listInternationalSmsPricing",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "description": "Page index. Range: 1 to 1,000,000."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            },
+            "description": "Page size. Range: 1 to 500."
+          },
+          {
+            "name": "countryIso",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2}$",
+              "examples": [
+                "IQ"
+              ]
+            },
+            "description": "Optional two-letter ISO country code (for example, IQ). Matching is case-insensitive."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "International SMS pricing list retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "currency",
+                    "page",
+                    "limit",
+                    "total",
+                    "pages"
+                  ],
+                  "properties": {
+                    "currency": {
+                      "type": "string",
+                      "examples": [
+                        "IQD"
+                      ]
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "examples": [
+                        1
+                      ]
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 500,
+                      "examples": [
+                        100
+                      ]
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "examples": [
+                        0
+                      ]
+                    },
+                    "pages": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "examples": [
+                        1
+                      ]
+                    },
+                    "filter": {
+                      "description": "`{}` when listing all countries; `{ \"countryIso\": \"XX\" }` when `countryIso` is set.",
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "countryIso"
+                          ],
+                          "properties": {
+                            "countryIso": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{2}$",
+                              "examples": [
+                                "IQ"
+                              ]
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "items": {
+                      "type": "array",
+                      "description": "Sorted by countryIso, then mccMnc, then network.",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "continent",
+                          "countryIso",
+                          "countryCode",
+                          "country",
+                          "networkId",
+                          "network",
+                          "price"
+                        ],
+                        "properties": {
+                          "continent": {
+                            "type": "string"
+                          },
+                          "countryIso": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{2}$",
+                            "examples": [
+                              "IQ"
+                            ]
+                          },
+                          "countryCode": {
+                            "type": "string"
+                          },
+                          "country": {
+                            "type": "string"
+                          },
+                          "networkId": {
+                            "type": "string"
+                          },
+                          "network": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Billed amount in IQD per one SMS segment."
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "currency": "IQD",
+                      "page": 1,
+                      "limit": 100,
+                      "total": 0,
+                      "pages": 1,
+                      "filter": {},
+                      "items": [
+                        {
+                          "continent": "Asia",
+                          "countryIso": "IQ",
+                          "countryCode": "964",
+                          "country": "Iraq",
+                          "networkId": "iq_zain",
+                          "network": "Zain Iraq",
+                          "price": 0
+                        }
+                      ]
+                    }
+                  },
+                  "filtered": {
+                    "summary": "Filtered by country",
+                    "value": {
+                      "currency": "IQD",
+                      "page": 1,
+                      "limit": 100,
+                      "total": 1,
+                      "pages": 1,
+                      "filter": {
+                        "countryIso": "IQ"
+                      },
+                      "items": [
+                        {
+                          "continent": "Asia",
+                          "countryIso": "IQ",
+                          "countryCode": "964",
+                          "country": "Iraq",
+                          "networkId": "iq_zain",
+                          "network": "Zain Iraq",
+                          "price": 0
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "message"
+                      ],
+                      "properties": {
+                        "message": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "validation_error": {
+                    "summary": "Validation failed",
+                    "value": {
+                      "error": "countryIso must be exactly 2 characters"
+                    }
+                  },
+                  "invalid_country_iso": {
+                    "summary": "Invalid countryIso",
+                    "value": {
+                      "message": "countryIso must be a 2-letter ISO code"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "IP not allowed when IP allowlisting is enabled for the project.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "ip_not_whitelisted": {
+                    "summary": "IP not whitelisted",
+                    "value": {
+                      "message": "Your IP address is not whitelisted for this project"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/reports": {
       "get": {
         "tags": ["Delivery Reports"],
@@ -1116,7 +1429,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "API key authentication. Format: `Bearer sk_live_your_api_key_here`"
+        "description": "Project API key (`sk_live…` or `sk_dev…`). Send it as `Authorization: Bearer <api_key>`."
       }
     },
     "schemas": {

@@ -65,7 +65,8 @@
             "group": "Messaging & SMS Endpoints",
             "pages": [
               "api-reference/messaging/post",
-              "api-reference/messaging/track"
+              "api-reference/messaging/track",
+              "api-reference/messaging/international-sms-pricing"
             ]
           },
           {
