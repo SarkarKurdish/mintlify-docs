@@ -41,7 +41,8 @@
             "pages": [
               "useful-articles/do-i-need-sender-id",
               "useful-articles/how-dev-key-works",
-              "useful-articles/anti-fraud-system"
+              "useful-articles/anti-fraud-system",
+              "useful-articles/sms-character-support"
             ]
           }
         ]

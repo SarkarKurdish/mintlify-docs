@@ -1,0 +1,94 @@
+---
+title: "SMS character limits"
+description: "Learn how the characters you use affect SMS message length, encoding types, and billing for your otpiq messaging traffic."
+icon: "comment-sms"
+---
+
+When you send an SMS message through otpiq, the characters you use and the length of your message determine how many actual SMS parts are sent over the network. If you use parameterization for personalized messages, remember that the length might vary based on recipient-specific data.
+
+The otpiq API automatically detects the required encoding based on the characters in your message body, ensuring seamless delivery in any language.
+
+## Basic character set (GSM 7-bit)
+
+You can send up to 160 characters in a single SMS message if all characters belong to the standard GSM 7-bit alphabet. This is the most common encoding for standard text.
+
+### Supported GSM 7-bit characters
+
+The standard alphabet includes basic Latin characters, digits, and common punctuation:
+
+- **Letters:** `A-Z`, `a-z`
+- **Digits:** `0-9`
+- **Punctuation and symbols:** `@ £ $ ¥ è é ù ì ò Ç Ø ø Å å Δ _ Φ Γ Λ Ω Π Ψ Σ Θ Ξ Æ æ ß É SP ! " # ¤ % & ' ( ) * + , - . / : ; < = > ? ¡ Ä Ö Ñ Ü § ¿ ä ö ñ ü à`
+- **Control characters:** Line Feed (`LF`) and Carriage Return (`CR`)
+
+<Info>
+When formatting your message payload in JSON, provide the Line Feed character as `\n`.
+</Info>
+
+### Extended character set
+
+Certain characters are supported under the GSM 7-bit encoding but count as **two characters** in your SMS message instead of one:
+
+```text
+| ^ € { } [ ] ~ \
+```
+
+<Warning>
+Be mindful when using extended characters. Because they consume two character spaces, they quickly eat into your 160-character limit and may push your text into a multi-part message.
+</Warning>
+
+## Other languages and symbols (Unicode)
+
+If your message requires characters outside the GSM 7-bit alphabet (such as emojis, or characters from languages like Arabic, Chinese, or Cyrillic), otpiq automatically uses **16-bit Unicode (UCS-2)** encoding.
+
+When your message uses UCS-2 encoding, each character takes 2 bytes. This reduces the maximum length of a single SMS message from 160 characters down to **70 characters**.
+
+## Long multi-part messages
+
+You can send a message body with up to 2000 characters. Since standard SMS limits are 160 (GSM) or 70 (Unicode) characters, longer texts are split into multiple message parts. These parts are reassembled on the recipient's device, so it appears as one continuous message to your customers.
+
+<Note>
+Each message part requires a header for reassembly, which slightly reduces the character limit per part in long messages.
+</Note>
+
+### Multi-part limits for 7-bit encoding
+
+Each part in a multi-part 7-bit encoded message has a maximum length of **153 characters**.
+
+| Message Length (characters) | Number of SMS Parts |
+| --------------------------- | ------------------- |
+| 1–160 | 1 |
+| 161–306 | 2 |
+| 307–459 | 3 |
+| 460–612 | 4 |
+| 613–765 | 5 |
+| 766–918 | 6 |
+| 919–1061 | 7 |
+| 1062–1214 | 8 |
+
+<Tip>
+This pattern continues up to 14 parts for a 2000-character message.
+</Tip>
+
+### Multi-part limits for Unicode encoding
+
+Each part in a multi-part Unicode encoded message has a maximum length of **67 characters**.
+
+| Message Length (characters) | Number of SMS Parts |
+| --------------------------- | ------------------- |
+| 1–70 | 1 |
+| 71–134 | 2 |
+| 135–201 | 3 |
+| 202–268 | 4 |
+| 269–335 | 5 |
+| 336–402 | 6 |
+| 403–469 | 7 |
+| 470–538 | 8 |
+
+<Tip>
+This pattern continues up to 30 parts for a 2000-character message.
+</Tip>
+
+<Warning>
+Messages exceeding 2000 characters will be rejected by the otpiq API and return a 400 error. Ensure you track message lengths, especially when injecting dynamic variables.
+</Warning>
