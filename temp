@@ -1,0 +1,217 @@
+# WhatsApp Resources API
+
+Documentation for listing WhatsApp businesses, WhatsApp Business Accounts (WABAs), phone numbers, and message templates connected to a project.
+
+---
+
+## Overview
+
+This endpoint returns all WhatsApp resources linked to the **project that owns the API key** you send in the request.
+
+Use it when you need a single API call to discover:
+
+- Connected Meta businesses
+- WhatsApp Business Accounts (WABAs)
+- Phone numbers under each WABA
+- Message templates for each WABA
+
+- **Base path:** `/api`
+- **Authentication:** Project API key (`Bearer` token)
+- **Scope:** The project is resolved from the API key. You do not pass a project ID in the URL.
+
+---
+
+## Authentication
+
+Every request requires a valid project API key.
+
+| Item | Details |
+|------|---------|
+| Header | `Authorization: Bearer <api_key>` |
+| Key format | Must start with `sk_live` or `sk_dev` |
+| Where to get it | Project **Settings → API Keys** in the OTPIQ dashboard |
+| IP whitelist | If enabled on the project, the request must come from an allowed IP |
+
+**Typical error responses:**
+
+| Status | Meaning |
+|--------|---------|
+| `401 Unauthorized` | Missing, invalid, or revoked API key |
+| `403 Forbidden` | Request IP is not allowed (when IP whitelist is enabled) |
+| `500 Internal Server Error` | Server failed while fetching resources |
+
+---
+
+## Endpoint
+
+### List WhatsApp resources
+
+Returns businesses, WABAs, phone numbers, templates, and summary counts for the authenticated project.
+
+**Method:** `GET`  
+**Path:** `/whatsapp/resources`
+
+#### Query parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `includeTemplateComponents` | boolean | No | `false` | When `true`, each template includes its full `components` array (header, body, buttons, etc.). When `false`, template metadata is returned without component bodies. Accepted values: `true`, `false`, `1`, `0`. |
+
+#### Validation rules
+
+- `includeTemplateComponents` must be one of: `true`, `false`, `1`, `0` (case-insensitive).
+- Invalid values return `400` with a validation error.
+
+#### Success response
+
+- **Status:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "project": {
+      "id": "65a0a0a0a0a0a0a0a0a0a0a0",
+      "slug": "my-project",
+      "name": "My Project"
+    },
+    "summary": {
+      "businessCount": 1,
+      "accountCount": 2,
+      "phoneNumberCount": 3,
+      "templateCount": 12
+    },
+    "businesses": [
+      {
+        "id": "65b1b1b1b1b1b1b1b1b1b1b1",
+        "businessId": "123456789012345",
+        "name": "Business 123456789012345",
+        "whatsappAccounts": [
+          {
+            "id": "65c2c2c2c2c2c2c2c2c2c2c2",
+            "whatsappBusinessId": "987654321098765",
+            "name": "My WABA",
+            "accountReviewStatus": "APPROVED",
+            "businessVerificationStatus": "verified",
+            "banState": "",
+            "banDate": "",
+            "violationType": "",
+            "phoneNumbers": [
+              {
+                "id": "65d3d3d3d3d3d3d3d3d3d3d3",
+                "phoneNumberId": "112233445566778",
+                "displayPhoneNumber": "+964 770 123 4567",
+                "phoneNumber": "+9647701234567",
+                "verifiedName": "My Business",
+                "qualityRating": "GREEN",
+                "messagingLimit": "TIER_1K",
+                "status": "CONNECTED",
+                "codeVerificationStatus": "VERIFIED",
+                "isOfficialBusinessAccount": false,
+                "nameStatus": "APPROVED",
+                "createdAt": "2026-01-15T10:00:00.000Z"
+              }
+            ],
+            "templates": [
+              {
+                "id": "65e4e4e4e4e4e4e4e4e4e4e4",
+                "name": "otp_verification",
+                "category": "AUTHENTICATION",
+                "parameter_format": "POSITIONAL",
+                "language": "en",
+                "messageSendTtlSeconds": 600,
+                "reason": "",
+                "status": "APPROVED",
+                "isWhatsappFlow": false,
+                "createdAt": "2026-01-20T08:30:00.000Z"
+              }
+            ],
+            "createdAt": "2026-01-10T12:00:00.000Z"
+          }
+        ],
+        "createdAt": "2026-01-10T12:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+When `includeTemplateComponents=true`, each template object also includes:
+
+```json
+{
+  "components": [
+    {
+      "type": "BODY",
+      "text": "Your verification code is {{1}}"
+    }
+  ]
+}
+```
+
+#### Error responses
+
+| Status | Condition | Response body |
+|--------|-----------|---------------|
+| `400` | Invalid `includeTemplateComponents` value | Validation error from API validator |
+| `401` | Missing or invalid API key | `{ "message": "Unauthorized, please use your project api key" }` |
+| `403` | IP not allowed | `{ "message": "This IP address (...)" }` |
+| `500` | Server error | `{ "success": false, "message": "Failed to fetch WhatsApp resources" }` |
+
+---
+
+## cURL examples
+
+Replace:
+
+- `https://api.otpiq.com` with your OTPIQ API base URL
+- `sk_live_your_project_api_key` with your project API key from **Settings → API Keys**
+
+### Basic request (template metadata only)
+
+```bash
+curl -X GET 'https://api.otpiq.com/api/whatsapp/resources' \
+  -H 'Authorization: Bearer sk_live_your_project_api_key'
+```
+
+### Include full template components
+
+Use this when you need template body/header/button definitions, not just template names and status.
+
+```bash
+curl -X GET 'https://api.otpiq.com/api/whatsapp/resources?includeTemplateComponents=true' \
+  -H 'Authorization: Bearer sk_live_your_project_api_key'
+```
+
+### Pretty-print JSON response (requires `jq`)
+
+```bash
+curl -s -X GET 'https://api.otpiq.com/api/whatsapp/resources' \
+  -H 'Authorization: Bearer sk_live_your_project_api_key' \
+  | jq .
+```
+
+### Development API key
+
+If your project uses a development key:
+
+```bash
+curl -X GET 'https://api.otpiq.com/api/whatsapp/resources' \
+  -H 'Authorization: Bearer sk_dev_your_project_api_key'
+```
+
+---
+
+## Notes
+
+- The API key determines which project's WhatsApp resources are returned. Use the key from the project whose WhatsApp accounts you want to list.
+- If the project has no connected WhatsApp businesses, `businesses` is an empty array and all summary counts are `0`.
+- Template lists are scoped to templates stored for WABAs linked to the project.
+- For large integrations, start with `includeTemplateComponents=false` and only request components when you need to render or inspect template structure.
+
+---
+
+## Related docs
+
+- [API overview](./api.md)
+- [Delivery Reports API](./api-delivery-reports.md)

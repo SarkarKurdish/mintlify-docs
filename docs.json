@@ -82,6 +82,12 @@
               "api-reference/reports/generate",
               "api-reference/reports/list"
             ]
+          },
+          {
+            "group": "WhatsApp Endpoints",
+            "pages": [
+              "api-reference/whatsapp/resources"
+            ]
           }
         ]
       }

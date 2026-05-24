@@ -53,6 +53,10 @@
     {
       "name": "Pricing",
       "description": "Retrieve international SMS pricing information"
+    },
+    {
+      "name": "WhatsApp",
+      "description": "List WhatsApp businesses, accounts, phone numbers, and message templates connected to a project"
     }
   ],
   "paths": {
@@ -1420,6 +1424,241 @@
             }
           },
           "500": {"$ref": "#/components/responses/InternalServerError"}
+        }
+      }
+    },
+    "/whatsapp/resources": {
+      "get": {
+        "tags": ["WhatsApp"],
+        "summary": "List WhatsApp resources",
+        "description": "Returns all WhatsApp resources linked to the project that owns the API key: connected Meta businesses, WhatsApp Business Accounts (WABAs), phone numbers, and message templates. The project is resolved from the API key—you do not pass a project ID in the URL.",
+        "operationId": "listWhatsAppResources",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "includeTemplateComponents",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "example": true
+            },
+            "description": "When `true`, each template includes its full `components` array (header, body, buttons, etc.). When `false`, only template metadata is returned. Accepted values: `true`, `false`, `1`, `0` (case-insensitive)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WhatsApp resources retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "data"],
+                  "properties": {
+                    "success": {"type": "boolean", "examples": [true]},
+                    "data": {
+                      "type": "object",
+                      "required": ["project", "summary", "businesses"],
+                      "properties": {
+                        "project": {
+                          "type": "object",
+                          "required": ["id", "slug", "name"],
+                          "properties": {
+                            "id": {"type": "string", "description": "Project ObjectId"},
+                            "slug": {"type": "string", "description": "Project slug"},
+                            "name": {"type": "string", "description": "Project display name"}
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "required": ["businessCount", "accountCount", "phoneNumberCount", "templateCount"],
+                          "properties": {
+                            "businessCount": {"type": "integer", "description": "Number of connected Meta businesses"},
+                            "accountCount": {"type": "integer", "description": "Number of WhatsApp Business Accounts (WABAs)"},
+                            "phoneNumberCount": {"type": "integer", "description": "Number of phone numbers across all WABAs"},
+                            "templateCount": {"type": "integer", "description": "Number of message templates across all WABAs"}
+                          }
+                        },
+                        "businesses": {
+                          "type": "array",
+                          "description": "Connected Meta businesses. Empty array if none are linked.",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "string"},
+                              "businessId": {"type": "string", "description": "Meta business ID"},
+                              "name": {"type": "string"},
+                              "whatsappAccounts": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {"type": "string"},
+                                    "whatsappBusinessId": {"type": "string", "description": "WABA ID"},
+                                    "name": {"type": "string"},
+                                    "accountReviewStatus": {"type": "string", "examples": ["APPROVED"]},
+                                    "businessVerificationStatus": {"type": "string", "examples": ["verified"]},
+                                    "banState": {"type": "string"},
+                                    "banDate": {"type": "string"},
+                                    "violationType": {"type": "string"},
+                                    "phoneNumbers": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {"type": "string"},
+                                          "phoneNumberId": {"type": "string", "description": "Meta phone number ID"},
+                                          "displayPhoneNumber": {"type": "string"},
+                                          "phoneNumber": {"type": "string"},
+                                          "verifiedName": {"type": "string"},
+                                          "qualityRating": {"type": "string", "examples": ["GREEN"]},
+                                          "messagingLimit": {"type": "string", "examples": ["TIER_1K"]},
+                                          "status": {"type": "string", "examples": ["CONNECTED"]},
+                                          "codeVerificationStatus": {"type": "string", "examples": ["VERIFIED"]},
+                                          "isOfficialBusinessAccount": {"type": "boolean"},
+                                          "nameStatus": {"type": "string", "examples": ["APPROVED"]},
+                                          "createdAt": {"type": "string", "format": "date-time"}
+                                        }
+                                      }
+                                    },
+                                    "templates": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {"type": "string"},
+                                          "name": {"type": "string"},
+                                          "category": {"type": "string", "examples": ["AUTHENTICATION"]},
+                                          "parameter_format": {"type": "string", "examples": ["POSITIONAL"]},
+                                          "language": {"type": "string", "examples": ["en"]},
+                                          "messageSendTtlSeconds": {"type": "integer"},
+                                          "reason": {"type": "string"},
+                                          "status": {"type": "string", "examples": ["APPROVED"]},
+                                          "isWhatsappFlow": {"type": "boolean"},
+                                          "createdAt": {"type": "string", "format": "date-time"},
+                                          "components": {
+                                            "type": "array",
+                                            "description": "Present when includeTemplateComponents=true",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "type": {"type": "string", "examples": ["BODY"]},
+                                                "text": {"type": "string"}
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "createdAt": {"type": "string", "format": "date-time"}
+                                  }
+                                }
+                              },
+                              "createdAt": {"type": "string", "format": "date-time"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "project": {"id": "65a0a0a0a0a0a0a0a0a0a0a0", "slug": "my-project", "name": "My Project"},
+                        "summary": {"businessCount": 1, "accountCount": 2, "phoneNumberCount": 3, "templateCount": 12},
+                        "businesses": [{
+                          "id": "65b1b1b1b1b1b1b1b1b1b1b1",
+                          "businessId": "123456789012345",
+                          "name": "Business 123456789012345",
+                          "whatsappAccounts": [{
+                            "id": "65c2c2c2c2c2c2c2c2c2c2c2",
+                            "whatsappBusinessId": "987654321098765",
+                            "name": "My WABA",
+                            "accountReviewStatus": "APPROVED",
+                            "businessVerificationStatus": "verified",
+                            "banState": "",
+                            "banDate": "",
+                            "violationType": "",
+                            "phoneNumbers": [{
+                              "id": "65d3d3d3d3d3d3d3d3d3d3d3",
+                              "phoneNumberId": "112233445566778",
+                              "displayPhoneNumber": "+964 770 123 4567",
+                              "phoneNumber": "+9647701234567",
+                              "verifiedName": "My Business",
+                              "qualityRating": "GREEN",
+                              "messagingLimit": "TIER_1K",
+                              "status": "CONNECTED",
+                              "codeVerificationStatus": "VERIFIED",
+                              "isOfficialBusinessAccount": false,
+                              "nameStatus": "APPROVED",
+                              "createdAt": "2026-01-15T10:00:00.000Z"
+                            }],
+                            "templates": [{
+                              "id": "65e4e4e4e4e4e4e4e4e4e4e4",
+                              "name": "otp_verification",
+                              "category": "AUTHENTICATION",
+                              "parameter_format": "POSITIONAL",
+                              "language": "en",
+                              "messageSendTtlSeconds": 600,
+                              "reason": "",
+                              "status": "APPROVED",
+                              "isWhatsappFlow": false,
+                              "createdAt": "2026-01-20T08:30:00.000Z"
+                            }],
+                            "createdAt": "2026-01-10T12:00:00.000Z"
+                          }],
+                          "createdAt": "2026-01-10T12:00:00.000Z"
+                        }]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid includeTemplateComponents value",
+            "content": {
+              "application/json": {
+                "schema": {"type": "object", "properties": {"error": {"type": "string"}}}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {
+            "description": "Request IP is not allowed when IP whitelist is enabled on the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["message"],
+                  "properties": {
+                    "message": {"type": "string", "examples": ["This IP address is not allowed"]}
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server failed while fetching resources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "message"],
+                  "properties": {
+                    "success": {"type": "boolean", "examples": [false]},
+                    "message": {"type": "string", "examples": ["Failed to fetch WhatsApp resources"]}
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
