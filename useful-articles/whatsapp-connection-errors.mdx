@@ -1,0 +1,147 @@
+---
+title: "Troubleshoot WhatsApp connection errors"
+description: "Understand common error messages when connecting your WhatsApp Business account to OTPIQ and how to fix them."
+icon: "whatsapp"
+---
+
+When you connect a WhatsApp Business account to OTPIQ, Meta may return an error during embedded signup or when you link an existing account. This guide explains what each message means and what to do next.
+
+<Info>
+Accounts created through OTPIQ's [embedded signup](/whatsapp-business-api/how-to-connect-whatsapp-api) are configured with the correct currency automatically. Most issues appear when you reuse a WhatsApp account that was created elsewhere or linked to another provider.
+</Info>
+
+## Quick reference
+
+| Error | Typical cause | Fix |
+| --- | --- | --- |
+| Wrong currency | WABA billing currency is not AUD | Change currency to AUD in Meta, or create a new account via embedded signup |
+| Payment method / currency mismatch | Card or billing already set on the WABA with a different currency | Remove payment methods in Meta, or create a new account |
+| WABA not found | Rare Meta-side issue | Contact OTPIQ support |
+
+---
+
+## Wrong currency
+
+### What you see
+
+Meta reports that the WhatsApp account has the **wrong currency** (or a currency mismatch during connection).
+
+### What it means
+
+Every WhatsApp Business account connected to OTPIQ must use **AUD (Australian dollars)** as its billing currency. OTPIQ routes WhatsApp billing through Meta's infrastructure in a way that requires this setting.
+
+If you created the account through OTPIQ's embedded signup, AUD is applied for you. If the account was created earlier, linked to another BSP (Business Solution Provider), or set up manually in Meta, the currency may still be something else.
+
+### Check your currency
+
+<Steps>
+  <Step title="Open WhatsApp account settings in Meta">
+    Go to [WhatsApp account settings](https://business.facebook.com/latest/settings/whatsapp_account) in Meta Business Suite.
+  </Step>
+  <Step title="Select your WhatsApp account">
+    Choose the WhatsApp Business account you are trying to connect to OTPIQ.
+  </Step>
+  <Step title="Confirm the currency">
+    Find the **currency** field and verify it is set to **AUD**.
+  </Step>
+</Steps>
+
+### How to fix it
+
+<Tabs>
+  <Tab title="You can change the currency">
+    Update the currency to **AUD** in [WhatsApp account settings](https://business.facebook.com/latest/settings/whatsapp_account), then try connecting again from the [OTPIQ Dashboard](https://app.otpiq.com/connect-whatsapp-account).
+  </Tab>
+  <Tab title="Currency cannot be changed">
+    Sometimes Meta does not always allow changing currency on an existing WhatsApp Business account. In that case, create a **new** WhatsApp account using OTPIQ's [embedded signup](/whatsapp-business-api/how-to-connect-whatsapp-api) so AUD is set automatically.
+  </Tab>
+</Tabs>
+
+---
+
+## Payment method already set (currency mismatch)
+
+### What you see
+
+```text
+The WhatsApp Business Account passed in already has a payment method, and the inputted currency is different from the one already set for this WABA. Please try again with different inputs.
+```
+
+### What it means
+
+This WhatsApp Business account (**WABA**) already has billing configured in Meta with a payment method and a currency that does not match what OTPIQ needs (AUD). That usually happens when:
+
+- The account is **still connected** to another third-party WhatsApp provider, or was connected before and billing was left in place
+- Someone **added a credit card** to the WABA directly in the Meta Business dashboard
+
+Meta will not let OTPIQ attach its billing setup on top of conflicting payment settings.
+
+### How to fix it
+
+<Tabs>
+  <Tab title="Remove existing payment methods">
+    <Steps>
+      <Step title="Open WhatsApp account settings">
+        Go to [WhatsApp account settings](https://business.facebook.com/latest/settings/whatsapp_account).
+      </Step>
+      <Step title="Select the WABA">
+        Choose the account you want to connect to OTPIQ.
+      </Step>
+      <Step title="Remove payment methods">
+        Remove any **payment methods** linked to that WhatsApp Business account.
+      </Step>
+      <Step title="Reconnect in OTPIQ">
+        Return to the [OTPIQ Dashboard](https://app.otpiq.com/connect-whatsapp-account) and run embedded signup again.
+      </Step>
+    </Steps>
+
+    <Note>
+    If the account is still tied to another provider, disconnect it there first when possible, then remove payment methods in Meta before reconnecting to OTPIQ.
+    </Note>
+  </Tab>
+  <Tab title="Create a new WhatsApp account">
+    If you cannot clear billing or the account must stay with another provider, create a **new** WhatsApp Business account through OTPIQ's [embedded signup](/whatsapp-business-api/how-to-connect-whatsapp-api) instead of reusing the existing WABA.
+  </Tab>
+</Tabs>
+
+---
+
+## WABA not found
+
+### What you see
+
+```text
+WABA <WABA_ID> not found
+```
+
+(The message includes a numeric or alphanumeric WhatsApp Business Account ID.)
+
+### What it means
+
+Meta could not find the WhatsApp Business account ID used during the connection flow. This is **uncommon** and usually points to a temporary or internal issue on Meta's side, or a mismatch between the account Meta returns during signup and what OTPIQ expects to link.
+
+This is not something you can reliably fix from the Meta dashboard alone.
+
+### How to fix it
+
+<Steps>
+  <Step title="Retry once">
+    Wait a few minutes, then try [connecting again](https://app.otpiq.com/connect-whatsapp-account). Clear your browser cache or use a private window if signup behaves oddly.
+  </Step>
+  <Step title="Contact OTPIQ support">
+    If the error persists, email [info@otpiq.com](mailto:info@otpiq.com) with:
+    - The full error message (including the WABA ID)
+    - The email on your Meta Business account
+    - When the error occurred (date and time)
+  </Step>
+</Steps>
+
+<Tip>
+Our team can check the connection on our side and work with Meta if the WABA ID is invalid or out of sync.
+</Tip>
+
+---
+
+## Still stuck?
+
+If none of the steps above resolve your issue, contact [info@otpiq.com](mailto:info@otpiq.com) or message us on WhatsApp at [9647501580221](https://wa.me/9647501580221). Include a screenshot of the error and whether you are using a new embedded signup account or an existing WABA from another provider.
