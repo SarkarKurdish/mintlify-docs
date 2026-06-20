@@ -89,6 +89,20 @@
             "pages": [
               "api-reference/whatsapp/resources"
             ]
+          },
+          {
+            "group": "WhatsApp Campaigns Endpoints",
+            "pages": [
+              "api-reference/whatsapp/campaigns/create",
+              "api-reference/whatsapp/campaigns/get-recipient-payload",
+              "api-reference/whatsapp/campaigns/attach-recipients",
+              "api-reference/whatsapp/campaigns/send-sample",
+              "api-reference/whatsapp/campaigns/start",
+              "api-reference/whatsapp/campaigns/list",
+              "api-reference/whatsapp/campaigns/get",
+              "api-reference/whatsapp/campaigns/update",
+              "api-reference/whatsapp/campaigns/delete"
+            ]
           }
         ]
       }

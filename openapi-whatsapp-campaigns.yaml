@@ -1,0 +1,860 @@
+openapi: 3.0.0
+info:
+  title: OTPIQ WhatsApp Campaigns API
+  version: 1.0.0
+  description: |
+    External API for creating, running, and monitoring WhatsApp template campaigns.
+
+    **Authentication:** project API key as bearer token:
+    `Authorization: Bearer sk_live_...` or `sk_dev_...`
+
+    All paths are mounted under `/api`. Campaigns are identified by MongoDB `_id` (24-char hex).
+
+    **Dev API keys:** when using a `sk_dev_...` key, all recipient phone numbers are replaced with the key's verified dev phone before send.
+
+    **Suggested workflow**
+    1. `GET /api/whatsapp/resources?includeTemplateComponents=true` — pick `templateId` and `phoneNumberId`
+    2. `GET /api/whatsapp/campaigns/recipient-payload?templateId=...` — get required recipient JSON shape
+    3. `POST /api/whatsapp/campaigns` — create campaign shell (**no recipients**)
+    4. `POST /api/whatsapp/campaigns/{_id}/recipients` — attach up to 1000 recipients (computes cost)
+    5. `POST /api/whatsapp/campaigns/{_id}/start` — reserve credits and send
+    6. `GET /api/whatsapp/campaigns/{_id}` — monitor progress
+  contact:
+    name: OTPIQ API support
+    url: https://otpiq.com
+
+servers:
+  - url: https://api.otpiq.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local backend (adjust port if needed)
+
+tags:
+  - name: WhatsApp Campaigns
+    description: Bulk WhatsApp template campaigns
+
+security:
+  - ProjectApiKey: []
+
+paths:
+  /api/whatsapp/campaigns/recipient-payload:
+    get:
+      tags: [WhatsApp Campaigns]
+      summary: Get recipient JSON schema for a template
+      description: |
+        Returns `template`, `fields`, and `exampleRecipient` for building recipient JSON.
+        Provide exactly one of `templateId` or campaign id (`_id` or `campaignId`, same MongoDB id).
+      operationId: getWhatsAppCampaignRecipientPayload
+      parameters:
+        - name: templateId
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-fA-F0-9]{24}$"
+          description: MongoDB template id from GET /api/whatsapp/resources
+        - name: _id
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-fA-F0-9]{24}$"
+          description: Campaign MongoDB id (uses the campaign's linked template)
+        - name: campaignId
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-fA-F0-9]{24}$"
+          description: Alias for `_id` (campaign MongoDB id)
+      responses:
+        "200":
+          description: Payload schema and examples
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipientPayloadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /api/whatsapp/campaigns:
+    get:
+      tags: [WhatsApp Campaigns]
+      summary: List WhatsApp campaigns
+      description: |
+        Returns campaigns newest first. When both `page` and `limit` are provided, results are paginated;
+        otherwise all matching campaigns are returned.
+      operationId: listWhatsAppCampaigns
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [draft, scheduled, running, completed, failed]
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Campaign list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+
+    post:
+      tags: [WhatsApp Campaigns]
+      summary: Create a WhatsApp campaign
+      description: |
+        Creates a campaign **without recipients**. Use
+        `POST /api/whatsapp/campaigns/{_id}/recipients` to add recipients
+        before calling `/start`.
+
+        `category` is inferred from the template and cannot be set on create.
+
+        **`scheduleType`** accepts exactly **2** values:
+
+        | Value | Behavior |
+        |-------|----------|
+        | `now` | Default. Campaign is saved as **`draft`**. Call `POST /api/whatsapp/campaigns/{_id}/start` when ready to send. |
+        | `schedule` | Requires `scheduledFor` (ISO-8601 datetime **in the future**). Campaign is saved as **`scheduled`** and starts automatically at that time. Do not call `/start` manually. |
+
+        If `scheduleType` is `schedule`, **`scheduledFor` is required** and must be a future ISO-8601 datetime. Otherwise the API returns **400**.
+      operationId: createWhatsAppCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCampaignRequest"
+            examples:
+              draftNow:
+                summary: Draft campaign (scheduleType now)
+                value:
+                  name: "Summer promo"
+                  templateId: "664abc123def456789012345"
+                  phoneNumberId: "664def456abc789012345678"
+                  scheduleType: "now"
+              scheduled:
+                summary: Scheduled campaign (scheduleType schedule)
+                value:
+                  name: "Friday blast"
+                  templateId: "664abc123def456789012345"
+                  phoneNumberId: "664def456abc789012345678"
+                  scheduleType: "schedule"
+                  scheduledFor: "2026-06-06T09:00:00.000Z"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /api/whatsapp/campaigns/{_id}:
+    get:
+      tags: [WhatsApp Campaigns]
+      summary: Get campaign details and recipients
+      operationId: getWhatsAppCampaign
+      parameters:
+        - $ref: "#/components/parameters/CampaignIdPath"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 20
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [queued, sent, delivered, read, failed]
+          description: Filter paginated recipients by delivery status
+        - name: phoneNumber
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Partial phone number search on recipients
+      responses:
+        "200":
+          description: Campaign with paginated recipients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    patch:
+      tags: [WhatsApp Campaigns]
+      summary: Update draft or scheduled campaign
+      description: |
+        Only campaigns in `draft` or `scheduled` status can be edited.
+        Sample campaigns and campaigns that have already started cannot be edited.
+        Updates campaign metadata only (name, template, phone number, schedule, category).
+        To attach recipients, use `POST /api/whatsapp/campaigns/{_id}/recipients`.
+
+        **`scheduleType`** accepts exactly **2** values: `now` or `schedule` (see POST `/api/whatsapp/campaigns`).
+      operationId: updateWhatsAppCampaign
+      parameters:
+        - $ref: "#/components/parameters/CampaignIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCampaignRequest"
+      responses:
+        "200":
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    delete:
+      tags: [WhatsApp Campaigns]
+      summary: Delete draft or scheduled campaign
+      operationId: deleteWhatsAppCampaign
+      parameters:
+        - $ref: "#/components/parameters/CampaignIdPath"
+      responses:
+        "200":
+          description: Campaign deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessEmptyDataResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /api/whatsapp/campaigns/{_id}/recipients:
+    post:
+      tags: [WhatsApp Campaigns]
+      summary: Attach recipients to a campaign
+      description: |
+        Validates, normalizes, and attaches up to **1000** recipients to a draft or scheduled campaign
+        (replaces any existing recipients). Duplicate phone numbers are deduplicated.
+        Per-recipient and total cost (`estimatedTotalCost`, `reservedAmount`) are computed from the template.
+        Only campaigns in `draft` or `scheduled` status can be updated.
+      operationId: setWhatsAppCampaignRecipients
+      parameters:
+        - $ref: "#/components/parameters/CampaignIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetCampaignRecipientsRequest"
+      responses:
+        "200":
+          description: Recipients attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /api/whatsapp/campaigns/{_id}/start:
+    post:
+      tags: [WhatsApp Campaigns]
+      summary: Start a campaign
+      description: |
+        Reserves project credits and enqueues the campaign for sending.
+        Requires at least one recipient on the campaign (`POST .../{_id}/recipients`).
+        Returns **400** if the project balance is insufficient (prepaid accounts).
+      operationId: startWhatsAppCampaign
+      parameters:
+        - $ref: "#/components/parameters/CampaignIdPath"
+      responses:
+        "200":
+          description: Campaign started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /api/whatsapp/campaigns/{_id}/sample:
+    post:
+      tags: [WhatsApp Campaigns]
+      summary: Send a sample campaign
+      description: |
+        Creates a child sample campaign from a draft or scheduled main campaign, attaches recipients,
+        and immediately starts it. Max **1000** recipients per request.
+        The parent campaign is not modified.
+      operationId: createWhatsAppSampleCampaign
+      parameters:
+        - $ref: "#/components/parameters/CampaignIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SampleCampaignRequest"
+      responses:
+        "201":
+          description: Sample campaign created and started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+components:
+  securitySchemes:
+    ProjectApiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: sk_live / sk_dev API key
+      description: |
+        Project API key from the OTPIQ dashboard.
+        Example: Authorization: Bearer sk_live_your_key_here
+
+  parameters:
+    CampaignIdPath:
+      name: _id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+      example: "664abc123def456789012346"
+      description: Campaign MongoDB id returned on create
+
+  responses:
+    UnauthorizedError:
+      description: Missing, invalid, or unknown API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MessageOnly"
+          example:
+            message: Unauthorized, please use your project api key
+    ForbiddenError:
+      description: Forbidden (IP allowlist, dev key restrictions, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+    BadRequestError:
+      description: Validation or business rule error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+          example:
+            success: false
+            error: Recipients cannot exceed 1000 per request
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiErrorResponse"
+          example:
+            success: false
+            error: Campaign not found
+
+  schemas:
+    MessageOnly:
+      type: object
+      properties:
+        message:
+          type: string
+      additionalProperties: true
+
+    ApiErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+        unsupportedPhoneNumbers:
+          type: array
+          items:
+            type: string
+          description: Present when one or more recipient countries are unsupported
+      additionalProperties: true
+
+    SuccessResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          additionalProperties: true
+
+    SuccessEmptyDataResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+          additionalProperties: false
+
+    TemplateParameters:
+      type: object
+      properties:
+        body:
+          type: object
+          additionalProperties:
+            type: string
+          description: Body variable values keyed by placeholder index (e.g. `"1"`, `"2"`)
+        header:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            Header variable values keyed by placeholder index, or media URLs:
+            `imageUrl`, `videoUrl`, `documentUrl` depending on template header format
+        buttons:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+          description: Button URL variables keyed by button index, then variable index
+      additionalProperties: false
+
+    CampaignRecipientInput:
+      type: object
+      required: [phoneNumber]
+      properties:
+        phoneNumber:
+          type: string
+          minLength: 8
+          maxLength: 20
+          description: Digits only, international format (e.g. 9647712345678)
+          example: "9647712345678"
+        templateParameters:
+          $ref: "#/components/schemas/TemplateParameters"
+          description: Required when the template has variables; omit otherwise
+
+    RecipientsArray:
+      type: array
+      minItems: 1
+      maxItems: 1000
+      items:
+        $ref: "#/components/schemas/CampaignRecipientInput"
+
+    CreateCampaignRequest:
+      type: object
+      required: [name, templateId, phoneNumberId]
+      description: |
+        Does not include recipients. Add them via
+        `POST /api/whatsapp/campaigns/{_id}/recipients`.
+        Category is always taken from the linked template.
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 80
+        templateId:
+          type: string
+          pattern: "^[a-fA-F0-9]{24}$"
+        phoneNumberId:
+          type: string
+          pattern: "^[a-fA-F0-9]{24}$"
+          description: Must belong to the same WABA as the template
+        scheduleType:
+          allOf:
+            - $ref: "#/components/schemas/ScheduleType"
+          default: now
+        scheduledFor:
+          type: string
+          format: date-time
+          description: |
+            **Required** when `scheduleType` is `schedule` (future ISO-8601 datetime).
+            Omit when `scheduleType` is `now` or omitted.
+      additionalProperties: false
+
+    ScheduleType:
+      type: string
+      enum: [now, schedule]
+      description: |
+        Exactly two allowed values:
+        - `now` — save as draft; start manually via POST `.../start` (`scheduledFor` not used)
+        - `schedule` — **requires** `scheduledFor` (future datetime); saves as `scheduled`; auto-starts at that time
+
+    UpdateCampaignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 80
+        templateId:
+          type: string
+          pattern: "^[a-fA-F0-9]{24}$"
+        phoneNumberId:
+          type: string
+          pattern: "^[a-fA-F0-9]{24}$"
+        category:
+          type: string
+          enum: [MARKETING, UTILITY]
+        scheduleType:
+          $ref: "#/components/schemas/ScheduleType"
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+          description: ISO-8601 datetime in the future when `scheduleType` is `schedule`
+      additionalProperties: false
+
+    SetCampaignRecipientsRequest:
+      type: object
+      required: [recipients]
+      properties:
+        recipients:
+          $ref: "#/components/schemas/RecipientsArray"
+      additionalProperties: false
+
+    SampleCampaignRequest:
+      type: object
+      required: [recipients]
+      properties:
+        recipients:
+          $ref: "#/components/schemas/RecipientsArray"
+      additionalProperties: false
+
+    RecipientPayloadField:
+      type: object
+      required: [key, label, required, example, templateParametersPath]
+      properties:
+        key:
+          type: string
+          example: "1"
+        label:
+          type: string
+          example: "Body {{1}}"
+        required:
+          type: boolean
+        example:
+          type: string
+        templateParametersPath:
+          type: string
+          example: templateParameters.body.1
+
+    RecipientPayloadTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        language:
+          type: string
+        category:
+          type: string
+          enum: [MARKETING, UTILITY]
+
+    RecipientPayloadData:
+      type: object
+      required: [template, fields, exampleRecipient]
+      properties:
+        template:
+          $ref: "#/components/schemas/RecipientPayloadTemplate"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipientPayloadField"
+        exampleRecipient:
+          $ref: "#/components/schemas/CampaignRecipientInput"
+
+    RecipientPayloadResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/RecipientPayloadData"
+
+    WhatsAppCampaign:
+      type: object
+      properties:
+        _id:
+          type: string
+          pattern: "^[a-fA-F0-9]{24}$"
+        campaignId:
+          type: string
+          pattern: "^wac_[a-z0-9]+$"
+          description: Human-readable campaign reference (e.g. wac_abc123)
+        name:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, running, completed, failed]
+        category:
+          type: string
+          enum: [MARKETING, UTILITY]
+        template:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+          description: MongoDB id or populated object with name, language, category
+        phoneNumber:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+          description: MongoDB id or populated object with displayPhoneNumber, phoneNumber, verifiedName
+        scheduleType:
+          $ref: "#/components/schemas/ScheduleType"
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        totalRecipients:
+          type: integer
+        sentCount:
+          type: integer
+        deliveredCount:
+          type: integer
+        failedCount:
+          type: integer
+        estimatedTotalCost:
+          type: number
+          description: Total estimated cost in IQD (set when recipients are attached)
+        reservedAmount:
+          type: number
+          description: Credits reserved at start in IQD
+        reconciledAmount:
+          type: number
+          description: Final billed amount after delivery reconciliation
+        billingStatus:
+          type: string
+          enum: [none, reserved, reconciled]
+        isSampleCampaign:
+          type: boolean
+        sampleOfCampaign:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+          nullable: true
+          description: Parent campaign when this is a sample send
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    CampaignRecipient:
+      type: object
+      properties:
+        _id:
+          type: string
+        phoneNumber:
+          type: string
+        status:
+          type: string
+          enum: [queued, sent, delivered, read, failed]
+        templateParameters:
+          $ref: "#/components/schemas/TemplateParameters"
+        estimatedCost:
+          type: number
+          description: Per-recipient estimated cost in IQD
+        finalCost:
+          type: number
+          description: Final billed cost in IQD after delivery
+        billingState:
+          type: string
+          enum: [reserved, finalized, refunded]
+        errorMessage:
+          type: string
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        failedAt:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: true
+
+    LinkedSampleCampaign:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        campaignId:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, running, completed, failed]
+        totalRecipients:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        pages:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    CampaignResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/WhatsAppCampaign"
+
+    CampaignListResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/WhatsAppCampaign"
+
+    CampaignDetailData:
+      allOf:
+        - $ref: "#/components/schemas/WhatsAppCampaign"
+        - type: object
+          properties:
+            recipients:
+              type: array
+              items:
+                $ref: "#/components/schemas/CampaignRecipient"
+            linkedSampleCampaigns:
+              type: array
+              items:
+                $ref: "#/components/schemas/LinkedSampleCampaign"
+              description: Sample sends linked to this campaign (empty for sample campaigns)
+            pagination:
+              $ref: "#/components/schemas/Pagination"
+
+    CampaignDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/CampaignDetailData"

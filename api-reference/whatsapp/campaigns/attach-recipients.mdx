@@ -1,0 +1,13 @@
+---
+title: "Attach Recipients"
+description: "Append recipients to a draft or scheduled campaign"
+openapi: "POST /whatsapp/campaigns/{_id}/recipients"
+---
+
+<Info>
+This endpoint **appends** new recipients to the existing list. 
+- Phone numbers already on the campaign are skipped.
+- Duplicates within the same request are deduplicated.
+- A campaign can have a maximum of **1000** recipients total. If appending would exceed this limit, a `400` error is returned.
+- If every number in your request already exists on the campaign, a `400` error is returned.
+</Info>
