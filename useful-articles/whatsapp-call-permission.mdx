@@ -1,0 +1,201 @@
+---
+title: "WhatsApp Business Calling and call permission"
+description: "Learn how WhatsApp Business Calling works in OTPIQ, what you need to place or receive calls, and how call permission requests work."
+icon: "phone"
+---
+
+WhatsApp Business Calling lets you talk to customers over voice inside WhatsApp — from the OTPIQ inbox — without sharing a personal phone number. This guide explains how calling works, what you need before you start, and why **call permission** matters for outbound calls.
+
+<Info>
+Calling is available on WhatsApp Business accounts connected to OTPIQ. If you have not connected an account yet, follow [How to connect WhatsApp API](/whatsapp-business-api/how-to-connect-whatsapp-api).
+</Info>
+
+## What is WhatsApp Business Calling?
+
+WhatsApp Business Calling is Meta’s voice feature for the WhatsApp Business Platform. In OTPIQ, agents answer and place calls from the **WhatsApp inbox** in the browser using WebRTC (your microphone and speakers).
+
+There are two call directions:
+
+| Direction | Who starts the call | Permission required? | Typical use |
+| --- | --- | --- | --- |
+| **User-initiated** | The customer calls your business number | No extra permission from you | Support, sales follow-up after the customer taps Call |
+| **Business-initiated** | Your team calls the customer from the inbox | Yes — the customer must grant call permission first | Proactive support, order help, scheduled callbacks |
+
+<Tip>
+Incoming (user-initiated) calls ring in the OTPIQ inbox when your WhatsApp number is connected and calling is enabled. Outbound (business-initiated) calls always need prior customer consent.
+</Tip>
+
+## What you need
+
+Before you can use WhatsApp calling in OTPIQ, confirm the following:
+
+<CardGroup cols={2}>
+  <Card title="Connected WhatsApp account" icon="whatsapp">
+    A WhatsApp Business account and phone number linked to your project via [embedded signup](/whatsapp-business-api/how-to-connect-whatsapp-api).
+  </Card>
+  <Card title="Calling enabled" icon="phone-volume">
+    Voice calling must be enabled on the business phone number. OTPIQ configures this for connected accounts; contact support if the call button never appears.
+  </Card>
+  <Card title="Browser and microphone" icon="microphone">
+    Use a modern desktop browser and allow microphone access. Outbound calls cannot start without a working mic.
+  </Card>
+  <Card title="Project credit (outbound)" icon="coins">
+    Business-initiated calls are billed per minute. Prepaid projects need enough balance to cover at least one minute before dialing.
+  </Card>
+</CardGroup>
+
+For **business-initiated** calls you also need:
+
+1. An **approved** call permission request template
+2. The customer’s **Accept** response (temporary or permanent)
+3. Permission that is still valid when you dial (temporary grants expire)
+
+---
+
+## Call permission explained
+
+WhatsApp does not let businesses cold-call customers. For outbound WhatsApp calls, the recipient must explicitly allow your business to call them.
+
+### How customers grant permission
+
+1. You send a **call permission request** template from OTPIQ.
+2. WhatsApp shows the customer **Accept** and **Decline** actions automatically (you do not add buttons yourself).
+3. If they Accept, they can choose:
+   - **Temporary** — usually valid for about **7 days**
+   - **Permanent** — until they revoke it in WhatsApp settings
+4. The reply appears in the inbox conversation (granted, declined, and expiry when temporary).
+5. After Accept, use the **Call** button in that chat to place the call.
+
+<Warning>
+If you try to call before permission is granted — or after temporary permission expires — OTPIQ blocks the call and prompts you to send a permission request first.
+</Warning>
+
+### Call permission request templates
+
+A call permission request is a special WhatsApp template type. Meta rules for this template:
+
+| Rule | Detail |
+| --- | --- |
+| **Category** | Must be **Utility** (fixed by Meta) |
+| **Body** | Required — explain why you want to call |
+| **Header / footer** | Optional text only (no media header) |
+| **Buttons** | Not allowed — WhatsApp adds Accept / Decline for you |
+| **Variables** | You can use `{{1}}`, `{{2}}`, … in header or body (for example order ID or name) |
+| **Approval** | Must be **Approved** by Meta before you can send it |
+
+Example body text:
+
+```text
+We would like to call you to help support your request. May we call you?
+```
+
+You can customize the wording for your brand, as long as it clearly asks for permission to call.
+
+---
+
+## Set up business-initiated calling
+
+<Steps>
+  <Step title="Connect WhatsApp to OTPIQ">
+    Complete [embedded signup](/whatsapp-business-api/how-to-connect-whatsapp-api) so your WABA and phone number appear in the project.
+  </Step>
+  <Step title="Create a call permission template">
+    In the dashboard, open your WhatsApp templates and create a new template with type **Call permission**.
+
+    - Category is locked to **Utility**
+    - Write a clear body (and optional header/footer)
+    - Submit for Meta review
+
+    <Check>
+    Wait until the template status is **Approved** before sending it to customers.
+    </Check>
+  </Step>
+  <Step title="Send the request to a contact">
+    Open the conversation in the WhatsApp inbox and send the approved call permission template.
+
+    If you press **Call** without permission, OTPIQ opens a dialog where you can select an approved template and send it immediately.
+  </Step>
+  <Step title="Wait for Accept">
+    When the contact taps **Allow**, the conversation shows that call permission was granted (temporary with an expiry, or permanent).
+  </Step>
+  <Step title="Place the call">
+    Click **Call** in the chat. Allow microphone access when the browser asks, then wait for the customer to answer.
+  </Step>
+</Steps>
+
+---
+
+## Receiving customer calls
+
+When a customer calls your WhatsApp business number:
+
+1. An incoming call notification appears in the OTPIQ inbox.
+2. An agent accepts or rejects the call.
+3. On accept, the browser sets up the voice session (microphone required).
+4. Either side can end the call; the conversation timeline records the call event.
+
+<Note>
+User-initiated calls do **not** require a call permission template. Permission is only for when **your business** starts the call.
+</Note>
+
+---
+
+## Pricing and billing
+
+Business-initiated WhatsApp calls are charged **per minute**, based on the destination market of the number you call.
+
+- Billing starts when the call is answered and connected.
+- Duration is rounded up to whole minutes (a short answered call still bills at least one minute).
+- Prepaid projects must have enough credit for at least the first minute before dialing; if balance runs out during a call, the call may be ended automatically.
+- Rates depend on the callee’s country/market — check the rate shown in the inbox when you start an outbound call.
+
+<Info>
+Incoming (user-initiated) call handling in the inbox does not use the same outbound per-minute charge model. Focus outbound budget planning on business-initiated calls.
+</Info>
+
+---
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="“Call permission required” when I try to call">
+    The contact has not granted permission yet, or temporary permission expired. Send an approved call permission request template and wait for **Accept**, then call again.
+  </Accordion>
+
+  <Accordion title="I have no call permission template to send">
+    Create a **Call permission** template under WhatsApp templates, submit it, and wait for Meta to mark it **Approved**. Pending or rejected templates cannot be sent for calling consent.
+  </Accordion>
+
+  <Accordion title="Microphone or network errors">
+    Allow microphone access in the browser. Use a stable network. Corporate firewalls that block WebRTC/STUN can prevent call setup — try another network or contact OTPIQ support if calls never connect.
+  </Accordion>
+
+  <Accordion title="Insufficient credit">
+    Top up your project balance. Outbound calls need enough prepaid credit for at least one minute at the destination rate before dialing.
+  </Accordion>
+
+  <Accordion title="Customer declined permission">
+    You cannot place a business-initiated call until they Accept a new request. Send another permission template only when it is appropriate (for example after they ask for a callback).
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related guides
+
+<CardGroup cols={2}>
+  <Card title="Connect WhatsApp API" icon="plug" href="/whatsapp-business-api/how-to-connect-whatsapp-api">
+    Link your WhatsApp Business account to OTPIQ with embedded signup.
+  </Card>
+  <Card title="WhatsApp messaging limits" icon="gauge" href="/whatsapp-business-api/whatsapp-messaging-limits">
+    Understand quality ratings and daily messaging tiers for your number.
+  </Card>
+  <Card title="Connection errors" icon="triangle-exclamation" href="/useful-articles/whatsapp-connection-errors">
+    Fix currency, payment method, and WABA errors during signup.
+  </Card>
+  <Card title="What is WhatsApp Business API?" icon="book" href="/whatsapp-business-api/what-is-whatsapp-business-api">
+    Overview of templates, categories, and how the platform works.
+  </Card>
+</CardGroup>
+
+If you need help enabling calling on a number or reviewing a stuck permission template, contact [info@otpiq.com](mailto:info@otpiq.com) or WhatsApp [9647501580221](https://wa.me/9647501580221).
